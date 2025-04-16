@@ -1,0 +1,382 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --viewport-padding: 1rem;
+    
+    /* Mobile: Add extra padding for small devices */
+    @media (max-width: 640px) {
+      --viewport-padding: 0.75rem;
+    }
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    /* Prevent font size inflation */
+    -webkit-text-size-adjust: 100%;
+    /* Enable smooth scrolling */
+    scroll-behavior: smooth;
+    /* Improve text rendering */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    /* Use a fluid font size that scales with viewport */
+    font-size: clamp(14px, calc(14px + 0.5vw), 18px);
+    /* Prevent layout shifts */
+    min-height: 100vh;
+    /* Prevent horizontal overflow */
+    overflow-x: hidden;
+    /* Handle larger viewports */
+    max-width: 100vw;
+  }
+  
+  /* Improved responsive typography with fluid scaling */
+  h1 {
+    @apply font-bold;
+    font-size: clamp(2rem, calc(1.8rem + 2vw), 4rem);
+    line-height: 1.1;
+  }
+  
+  h2 {
+    @apply font-bold;
+    font-size: clamp(1.5rem, calc(1.3rem + 1.5vw), 3rem);
+    line-height: 1.2;
+  }
+  
+  h3 {
+    @apply font-bold;
+    font-size: clamp(1.2rem, calc(1.1rem + 1vw), 2rem);
+    line-height: 1.3;
+  }
+  
+  h4 {
+    @apply font-bold;
+    font-size: clamp(1.1rem, calc(1rem + 0.5vw), 1.5rem);
+    line-height: 1.4;
+  }
+  
+  p {
+    @apply text-base mb-4;
+    max-width: 70ch; /* Optimal reading width */
+    line-height: 1.6;
+  }
+
+  /* Responsive images */
+  img, picture, video, canvas, svg {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+  
+  /* Improve form element sizing and spacing */
+  input, select, textarea, button {
+    font-size: inherit;
+    font-family: inherit;
+  }
+
+  /* Consistent button sizing */
+  button {
+    @apply text-base py-2 px-4;
+  }
+  
+  /* Responsive tables that don't break layouts */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    overflow-x: auto;
+    display: block;
+    max-width: fit-content;
+    
+    @media (min-width: 768px) {
+      display: table;
+      max-width: 100%;
+    }
+  }
+}
+
+/* Component layer - Add responsive container classes */
+@layer components {
+  .container-fluid {
+    width: 100%;
+    padding-right: var(--viewport-padding);
+    padding-left: var(--viewport-padding);
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  .container {
+    width: 100%;
+    padding-right: var(--viewport-padding);
+    padding-left: var(--viewport-padding);
+    margin-right: auto;
+    margin-left: auto;
+    max-width: 100%;
+    
+    @media (min-width: 640px) {
+      max-width: 600px;
+    }
+    
+    @media (min-width: 768px) {
+      max-width: 720px;
+    }
+    
+    @media (min-width: 1024px) {
+      max-width: 980px;
+    }
+    
+    @media (min-width: 1280px) {
+      max-width: 1200px;
+    }
+    
+    @media (min-width: al1536px) {
+      max-width: 1400px;
+    }
+  }
+
+  /* Responsive card layouts */
+  .card {
+    @apply bg-slate-800/50 backdrop-blur-md rounded-xl border border-slate-700/50 overflow-hidden p-5 sm:p-6 transition-all;
+  }
+  
+  .card-hover {
+    @apply hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5;
+  }
+  
+  /* Responsive grid layouts */
+  .grid-auto-fit {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.5rem;
+  }
+  
+  /* Two column layout that stacks on mobile */
+  .responsive-two-col {
+    display: grid;
+    gap: 2rem;
+    grid-template-columns: 1fr;
+    
+    @media (min-width: 768px) {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  
+  /* Three column layout that adapts to screen size */
+  .responsive-three-col {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: 1fr;
+    
+    @media (min-width: 640px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    
+    @media (min-width: 1024px) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+}
+
+/* Custom scrollbar styling */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
+/* Custom scrollbar for horizontal scrolling areas */
+.custom-scrollbar {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(30, 41, 59, 0.5);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.5);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.7);
+}
+
+/* Simple infinite scrolling logos - completely new approach */
+.logos-container {
+  width: 100%;
+  background: rgba(15, 23, 42, 0.6);
+  overflow: hidden;
+  position: relative;
+  padding: 1.25rem 0;
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
+}
+
+.logos-slider {
+  display: inline-flex;
+  animation: slide 30s linear infinite;
+  white-space: nowrap;
+  width: max-content;
+}
+
+.logo-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 1.25rem;
+}
+
+.logo-item img {
+  height: 2rem;
+  width: auto;
+  max-width: 4rem;
+  object-fit: contain;
+  opacity: 0.65;
+  transition: all 0.3s ease;
+  filter: grayscale(1);
+}
+
+.logo-item:hover img {
+  opacity: 1;
+  filter: grayscale(0);
+  transform: scale(1.1);
+}
+
+.logo-item span {
+  margin-top: 0.5rem;
+  font-size: 0.7rem;
+  color: rgb(148, 163, 184);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.logo-item:hover span {
+  opacity: 1;
+}
+
+@keyframes slide {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(calc(-100% / 3));
+  }
+}
+
+.logos-slider:hover {
+  animation-play-state: paused;
+}
+
+/* Responsive utilities */
+@layer utilities {
+  /* Hide on mobile but show on larger screens */
+  .hidden-mobile {
+    display: none;
+    
+    @media (min-width: 768px) {
+      display: block;
+    }
+  }
+  
+  /* Hide on desktop but show on mobile */
+  .hidden-desktop {
+    display: block;
+    
+    @media (min-width: 768px) {
+      display: none;
+    }
+  }
+  
+  /* Text utilities for responsive designs */
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .text-pretty {
+    text-wrap: pretty;
+  }
+  
+  /* Padding utilities that adjust based on screen size */
+  .p-responsive {
+    padding: clamp(1rem, 3vw, 2rem);
+  }
+  
+  .px-responsive {
+    padding-left: clamp(1rem, 3vw, 2rem);
+    padding-right: clamp(1rem, 3vw, 2rem);
+  }
+  
+  .py-responsive {
+    padding-top: clamp(1rem, 3vw, 2rem);
+    padding-bottom: clamp(1rem, 3vw, 2rem);
+  }
+  
+  /* Fluid margin utilities */
+  .m-responsive {
+    margin: clamp(1rem, 3vw, 2rem);
+  }
+  
+  .mt-responsive {
+    margin-top: clamp(1rem, 3vw, 2rem);
+  }
+  
+  .mb-responsive {
+    margin-bottom: clamp(1rem, 3vw, 2rem);
+  }
+  
+  /* Animation utilities */
+  .animate-logos-scroll {
+    animation: logos-scroll 30s linear infinite;
+  }
+  
+  .animate-logos-scroll-pause:hover {
+    animation-play-state: paused;
+  }
+  
+  /* Print styles to ensure the site looks good when printed */
+  @media print {
+    body {
+      color: black;
+      background: white;
+    }
+    
+    .no-print {
+      display: none;
+    }
+    
+    a {
+      text-decoration: underline;
+      color: #000;
+    }
+    
+    /* Make sure the content is visible and legible */
+    .card, .bg-slate-800, .bg-slate-900 {
+      background: white !important;
+      color: black !important;
+      border: 1px solid #ddd !important;
+      box-shadow: none !important;
+    }
+    
+    img {
+      max-width: 100% !important;
+    }
+  }
+}

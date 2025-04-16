@@ -1,0 +1,649 @@
+<!-- MCP & Cursor Rules Section -->
+<section class="mcp-cursor-section">
+  <style>
+    /* General section styles */
+    .mcp-cursor-section {
+      background-color: #0a0c14;
+      color: #f8fafc;
+      padding: 3rem 0;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+    
+    .section-header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+    
+    .section-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: #6366f1;
+      margin-bottom: 0.75rem;
+    }
+    
+    .section-title {
+      font-size: 2.25rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      line-height: 1.2;
+      color: #f8fafc;
+    }
+    
+    .gradient-text {
+      background: linear-gradient(90deg, #6366f1, #8b5cf6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      color: transparent;
+    }
+    
+    .section-description {
+      font-size: 1.1rem;
+      color: #cbd5e1;
+      max-width: 700px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+    
+    /* Tabs Styles */
+    .tabs-container {
+      margin-top: 2rem;
+    }
+    
+    .tabs {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+      padding-bottom: 0.5rem;
+    }
+    
+    .tab {
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #94a3b8;
+      background: transparent;
+      border: none;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    
+    .tab:hover {
+      color: #e2e8f0;
+    }
+    
+    .tab.active {
+      color: #6366f1;
+    }
+    
+    .tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: -0.5rem;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: #6366f1;
+      border-radius: 3px 3px 0 0;
+    }
+    
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.4s ease-in-out;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    /* MCP Servers Grid */
+    .mcp-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+    
+    .mcp-card {
+      display: flex;
+      align-items: center;
+      padding: 1.5rem;
+      background-color: #0f172a;
+      border: 1px solid rgba(51, 65, 85, 0.8);
+      border-radius: 0.5rem;
+      transition: all 0.3s;
+      text-decoration: none;
+      color: inherit;
+    }
+    
+    .mcp-card:hover {
+      transform: translateY(-5px);
+      background-color: #1e293b;
+      border-color: rgba(99, 102, 241, 0.7);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    }
+    
+    .mcp-logo {
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 1rem;
+      flex-shrink: 0;
+    }
+    
+    .mcp-logo img {
+      max-width: 100%;
+      max-height: 100%;
+    }
+    
+    .mcp-info {
+      flex-grow: 1;
+    }
+    
+    .mcp-info h4 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin: 0 0 0.5rem;
+      color: #f8fafc;
+    }
+    
+    .mcp-info p {
+      font-size: 0.9rem;
+      color: #cbd5e1;
+      margin: 0;
+      line-height: 1.5;
+    }
+    
+    /* Cursor Rules Styles */
+    .cursor-rules-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    
+    .rule-card {
+      display: flex;
+      flex-direction: column;
+      background-color: #0f172a;
+      border: 1px solid rgba(71, 85, 105, 0.7);
+      border-radius: 10px;
+      padding: 22px;
+      transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+      text-decoration: none;
+      color: inherit;
+      position: relative;
+      overflow: hidden;
+      height: 100%;
+    }
+    
+    .rule-card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(99, 102, 241, 0.7);
+      box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.3);
+      background-color: #1e293b;
+    }
+    
+    .rule-card.featured {
+      border-color: rgba(99, 102, 241, 0.7);
+      background-color: rgba(79, 70, 229, 0.15);
+    }
+    
+    .rule-card.featured:hover {
+      background-color: rgba(79, 70, 229, 0.2);
+    }
+    
+    .rule-badge {
+      display: inline-block;
+      background-color: #334155;
+      color: #e2e8f0;
+      font-size: 12px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 12px;
+      font-weight: 500;
+      letter-spacing: 0.2px;
+    }
+    
+    .featured-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background-color: rgba(99, 102, 241, 0.9);
+      color: white;
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-weight: 500;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    }
+    
+    .rule-title {
+      color: #f8fafc;
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      line-height: 1.3;
+    }
+    
+    .rule-description {
+      color: #cbd5e1;
+      font-size: 14px;
+      margin-bottom: 16px;
+      line-height: 1.5;
+      flex-grow: 1;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    
+    .rule-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    
+    .tag {
+      background-color: #334155;
+      color: #cbd5e1;
+      font-size: 12px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      transition: all 0.2s ease;
+    }
+    
+    .rule-card:hover .tag {
+      background-color: #475569;
+    }
+    
+    .create-card {
+      background-color: rgba(30, 41, 59, 0.5);
+      border: 1px dashed rgba(99, 102, 241, 0.5);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    
+    .create-card:hover {
+      border-style: dashed;
+      border-color: rgba(99, 102, 241, 0.8);
+      background-color: rgba(79, 70, 229, 0.08);
+    }
+    
+    .create-icon {
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: rgba(99, 102, 241, 0.2);
+      color: #a5b4fc;
+      font-size: 24px;
+      border-radius: 50%;
+      margin-bottom: 16px;
+      transition: all 0.3s ease;
+    }
+    
+    .create-card:hover .create-icon {
+      background-color: rgba(99, 102, 241, 0.3);
+      transform: scale(1.1);
+    }
+    
+    .create-button {
+      background-color: #4f46e5;
+      color: white;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      margin-top: 16px;
+      transition: all 0.2s;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    
+    .create-button:hover {
+      background-color: #4338ca;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+    
+    .view-rule {
+      color: #818cf8;
+      font-size: 14px;
+      font-weight: 500;
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+    }
+    
+    .arrow-right {
+      margin-left: 4px;
+      transition: transform 0.3s;
+    }
+    
+    .rule-card:hover .arrow-right {
+      transform: translateX(4px);
+    }
+    
+    /* Controls and filters */
+    .cursor-rules-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .cursor-rules-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      background-color: rgba(15, 23, 42, 0.7);
+      padding: 14px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      border: 1px solid rgba(71, 85, 105, 0.5);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .filter-badge {
+      display: inline-block;
+      background-color: #334155;
+      color: #e2e8f0;
+      font-size: 12px;
+      padding: 5px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 500;
+    }
+    
+    .filter-badge:hover {
+      background-color: rgba(99, 102, 241, 0.7);
+      color: white;
+      transform: translateY(-1px);
+    }
+    
+    .filter-badge.active {
+      background-color: #4f46e5;
+      color: white;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+    
+    .view-mode-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background-color: #1e293b;
+      color: #e2e8f0;
+      font-size: 13px;
+      padding: 8px 14px;
+      border-radius: 6px;
+      border: 1px solid rgba(71, 85, 105, 0.5);
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 500;
+    }
+    
+    .view-mode-button:hover {
+      background-color: #334155;
+      border-color: rgba(99, 102, 241, 0.5);
+    }
+    
+    .view-mode-button:active {
+      transform: scale(0.97);
+    }
+    
+    .cursor-rules-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    
+    .compact-view .cursor-rules-grid {
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    }
+    
+    .cursor-rules-search {
+      margin-bottom: 20px;
+      position: relative;
+    }
+    
+    .search-input {
+      width: 100%;
+      padding: 10px 40px 10px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(71, 85, 105, 0.5);
+      background-color: #1e293b;
+      color: #e2e8f0;
+      font-size: 14px;
+      transition: all 0.3s ease;
+    }
+    
+    .search-input:focus {
+      outline: none;
+      border-color: rgba(99, 102, 241, 0.7);
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+      background-color: #0f172a;
+    }
+    
+    .load-more-button {
+      background-color: #4f46e5;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 24px;
+    }
+    
+    .load-more-button:hover {
+      background-color: #4338ca;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .load-more-button:active {
+      transform: translateY(0);
+    }
+    
+    .show-count {
+      color: #94a3b8;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .animated-card {
+      animation: fadeIn 0.5s ease forwards;
+    }
+    
+    .cursor-rules-container {
+      position: relative;
+    }
+    
+    /* Responsive improvements */
+    @media (max-width: 768px) {
+      .cursor-rules-controls {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+      
+      .right-controls {
+        width: 100%;
+      }
+      
+      .view-mode-button {
+        width: 100%;
+        justify-content: center;
+      }
+      
+      .left-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      
+      .show-count {
+        width: 100%;
+        margin-top: 8px;
+      }
+      
+      .section-title {
+        font-size: 1.75rem;
+      }
+      
+      .tabs {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+      }
+    }
+  </style>
+  
+  <div class="container">
+    <div class="section-header">
+      <div class="section-label">SUPERCHARGE YOUR WORKFLOW</div>
+      <h2 class="section-title">MCP Servers & <span class="gradient-text">Cursor Rules</span></h2>
+      <p class="section-description">
+        Access our curated collection of MCP servers and Cursor rules to dramatically improve your AI development workflow
+      </p>
+    </div>
+    
+    <div class="tabs-container">
+      <div class="tabs">
+        <button class="tab active" data-tab="mcp-servers">MCP Servers</button>
+        <button class="tab" data-tab="cursor-rules">Cursor Rules</button>
+      </div>
+      
+      <div class="tab-content active" id="mcp-servers">
+        <div class="mcp-grid">
+          <a href="/mcp/stripe" class="mcp-card">
+            <div class="mcp-logo">
+              <img src="/assets/logos/stripe.svg" alt="Stripe MCP">
+            </div>
+            <div class="mcp-info">
+              <h4>Stripe</h4>
+              <p>Integrate payment processing with Stripe's API for your MVP</p>
+            </div>
+          </a>
+          
+          <a href="/mcp/github" class="mcp-card">
+            <div class="mcp-logo">
+              <img src="/assets/logos/github.svg" alt="GitHub MCP">
+            </div>
+            <div class="mcp-info">
+              <h4>GitHub</h4>
+              <p>Connect with GitHub repositories and manage your codebase</p>
+            </div>
+          </a>
+          
+          <a href="/mcp/postgresql" class="mcp-card">
+            <div class="mcp-logo">
+              <img src="/assets/logos/postgresql.svg" alt="PostgreSQL MCP">
+            </div>
+            <div class="mcp-info">
+              <h4>PostgreSQL</h4>
+              <p>Interact with PostgreSQL databases directly from your project</p>
+            </div>
+          </a>
+          
+          <a href="/mcp/supabase" class="mcp-card">
+            <div class="mcp-logo">
+              <img src="/assets/logos/supabase.svg" alt="Supabase MCP">
+            </div>
+            <div class="mcp-info">
+              <h4>Supabase</h4>
+              <p>Leverage Supabase's backend services for your application</p>
+            </div>
+          </a>
+          
+          <a href="/mcp/vercel" class="mcp-card">
+            <div class="mcp-logo">
+              <img src="/assets/logos/vercel.svg" alt="Vercel MCP">
+            </div>
+            <div class="mcp-info">
+              <h4>Vercel</h4>
+              <p>Deploy and manage your MVP with Vercel's platform</p>
+            </div>
+          </a>
+          
+          <a href="/mcp/openai" class="mcp-card">
+            <div class="mcp-logo">
+              <img src="/assets/logos/openai.svg" alt="OpenAI MCP">
+            </div>
+            <div class="mcp-info">
+              <h4>OpenAI</h4>
+              <p>Leverage OpenAI's powerful models in your applications</p>
+            </div>
+          </a>
+        </div>
+      </div>
+      
+      <div class="tab-content" id="cursor-rules">
+        <div class="cursor-rules-grid">
+          <!-- Cursor rules content will be dynamically populated by JavaScript -->
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Add script reference -->
+<script src="/assets/js/cursor-rules.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Tab functionality
+    const tabs = document.querySelectorAll('.tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    tabs.forEach(tab => {
+      tab.addEventListener('click', function() {
+        // Remove active class from all tabs and tab contents
+        tabs.forEach(t => t.classList.remove('active'));
+        tabContents.forEach(tc => tc.classList.remove('active'));
+        
+        // Add active class to clicked tab and corresponding tab content
+        this.classList.add('active');
+        const tabId = this.getAttribute('data-tab');
+        document.getElementById(tabId).classList.add('active');
+      });
+    });
+  });
+</script> 

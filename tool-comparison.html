@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Tool Comparison - CreateMVP</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="/css/tool-comparison.css">
+</head>
+<body>
+  <!-- Include navbar here -->
+  
+  <main class="tool-comparison-page">
+    <section class="hero-section">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-label">ADVANCED COMPARISON</div>
+          <h1 class="page-title">AI Tool <span class="gradient-text">Comparison</span></h1>
+          <p class="page-description">
+            Compare features, performance, and pricing of leading AI development tools to make informed decisions for your MVP
+          </p>
+        </div>
+        
+        <div class="search-filters">
+          <div class="search-bar">
+            <i class="icon-search"></i>
+            <input type="text" placeholder="Search tools..." class="search-input">
+          </div>
+          
+          <div class="filters">
+            <div class="filter-group">
+              <label>Category</label>
+              <select class="filter-select">
+                <option value="all">All Categories</option>
+                <option value="llm">LLM Models</option>
+                <option value="coding">Coding Assistants</option>
+                <option value="image">Image Generation</option>
+                <option value="deployment">Deployment</option>
+              </select>
+            </div>
+            
+            <div class="filter-group">
+              <label>Sort By</label>
+              <select class="filter-select">
+                <option value="popular">Most Popular</option>
+                <option value="rating">Highest Rated</option>
+                <option value="price-low">Price: Low to High</option>
+                <option value="price-high">Price: High to Low</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <section class="tools-grid-section">
+      <div class="container">
+        <h2 class="section-subtitle">Popular AI Tools</h2>
+        
+        <div class="tools-grid">
+          <!-- Tool Card 1 -->
+          <div class="tool-card">
+            <div class="tool-header">
+              <div class="tool-logo">
+                <img src="/assets/logos/openai.svg" alt="OpenAI">
+              </div>
+              <div class="tool-rating">
+                <div class="stars">
+                  <i class="icon-star"></i>
+                  <i class="icon-star"></i>
+                  <i class="icon-star"></i>
+                  <i class="icon-star"></i>
+                  <i class="icon-star-half"></i>
+                </div>
+                <span>4.5</span>
+              </div>
+            </div>
+            
+            <h3 class="tool-name">OpenAI GPT-4</h3>
+            <div class="tool-category">LLM Model</div>
+            
+            <p class="tool-description">
+              Latest multimodal large language model from OpenAI, with enhanced reasoning capabilities.
+            </p>
+            
+            <div class="tool-metrics">
+              <div class="metric">
+                <div class="metric-label">Performance</div>
+                <div class="metric-bar">
+                  <div class="metric-fill" style="width: 95%;"></div>
+                </div>
+              </div>
+              
+              <div class="metric">
+                <div class="metric-label">Cost Efficiency</div>
+                <div class="metric-bar">
+                  <div class="metric-fill" style="width: 65%;"></div>
+                </div>
+              </div>
+              
+              <div class="metric">
+                <div class="metric-label">Integration</div>
+                <div class="metric-bar">
+                  <div class="metric-fill" style="width: 85%;"></div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="tool-footer">
+              <a href="/tool/openai-gpt4" class="btn-secondary">View Details</a>
+              <button class="btn-compare" data-tool-id="openai-gpt4">
+                <i class="icon-compare"></i>
+                Compare
+              </button>
+            </div>
+          </div>
+          
+          <!-- Tool Card 2 -->
+          <div class="tool-card">
+            <div class="tool-header">
+              <div class="tool-logo">
+                <img src="/assets/logos/anthropic.svg" alt="Anthropic">
+              </div>
+              <div class="tool-rating">
+                <div class="stars">
+                  <i class="icon-star"></i>
+                  <i class="icon-star"></i>
+                  <i class="icon-star"></i>
+                  <i class="icon-star"></i>
+                  <i class="icon-star"></i>
+                </div>
+                <span>4.8</span>
+              </div>
+            </div>
+            
+            <h3 class="tool-name">Claude 3 Opus</h3>
+            <div class="tool-category">LLM Model</div>
+            
+            <p class="tool-description">
+              Anthropic's most advanced AI assistant, with exceptional reasoning and coding abilities.
+            </p>
+            
+            <div class="tool-metrics">
+              <div class="metric">
+                <div class="metric-label">Performance</div>
+                <div class="metric-bar">
+                  <div class="metric-fill" style="width: 98%;"></div>
+                </div>
+              </div>
+              
+              <div class="metric">
+                <div class="metric-label">Cost Efficiency</div>
+                <div class="metric-bar">
+                  <div class="metric-fill" style="width: 60%;"></div>
+                </div>
+              </div>
+              
+              <div class="metric">
+                <div class="metric-label">Integration</div>
+                <div class="metric-bar">
+                  <div class="metric-fill" style="width: 80%;"></div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="tool-footer">
+              <a href="/tool/claude-3-opus" class="btn-secondary">View Details</a>
+              <button class="btn-compare" data-tool-id="claude-3-opus">
+                <i class="icon-compare"></i>
+                Compare
+              </button>
+            </div>
+          </div>
+          
+          <!-- Tool Card 3 -->
+          <div class="tool-card">
+            <div class="tool-header">
+              <div class="tool-logo">
+                <img src="/assets/logos/github.svg" alt="GitHub">
+              </div>
+              <div class="tool-rating">
+                <div class="stars">
+                  <i class="icon-star"></i>
+                  <i class="icon-star"></i>
+                  <i class="icon-star"></i>
+                  <i class="icon-star"></i>
+                  <i class="icon-star-empty"></i>
+                </div>
+                <span>4.0</span>
+              </div>
+            </div>
+            
+            <h3 class="tool-name">GitHub Copilot</h3>
+            <div class="tool-category">Coding Assistant</div>
+            
+            <p class="tool-description">
+              AI pair programmer that helps you write code faster with suggestions based on comments and context.
+            </p>
+            
+            <div class="tool-metrics">
+              <div class="metric">
+                <div class="metric-label">Performance</div>
+                <div class="metric-bar">
+                  <div class="metric-fill" style="width: 85%;"></div>
+                </div>
+              </div>
+              
+              <div class="metric">
+                <div class="metric-label">Cost Efficiency</div>
+                <div class="metric-bar">
+                  <div class="metric-fill" style="width: 90%;"></div>
+                </div>
+              </div>
+              
+              <div class="metric">
+                <div class="metric-label">Integration</div>
+                <div class="metric-bar">
+                  <div class="metric-fill" style="width: 95%;"></div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="tool-footer">
+              <a href="/tool/github-copilot" class="btn-secondary">View Details</a>
+              <button class="btn-compare" data-tool-id="github-copilot">
+                <i class="icon-compare"></i>
+                Compare
+              </button>
+            </div>
+          </div>
+          
+          <!-- Tool Card 4 - Cursor -->
+          <div class="tool-card featured">
+            <div class="tool-header">
+              <div class="tool-logo">
+                <img src="/assets/logos/cursor.svg" alt="Cursor">
+              </div>
+              <div class="tool-rating">
+                <div class="stars">
+                  <i class="icon-star"></i>
+                  <i class="icon-star"></i>
+                  <i class="icon-star"></i>
+                  <i class="icon-star"></i>
+                  <i class="icon-star-half"></i>
+                </div>
+                <span>4.7</span>
+              </div>
+              <div class="featured-badge">Recommended</div>
+            </div>
+            
+            <h3 class="tool-name">Cursor AI Editor</h3>
+            <div class="tool-category">Coding Assistant</div>
+            
+            <p class="tool-description">
+              AI-first code editor with powerful LLM capabilities and built-in chat for efficient development.
+            </p>
+            
+            <div class="tool-metrics">
+              <div class="metric">
+                <div class="metric-label">Performance</div>
+                <div class="metric-bar">
+                  <div class="metric-fill" style="width: 95%;"></div>
+                </div>
+              </div>
+              
+              <div class="metric">
+                <div class="metric-label">Cost Efficiency</div>
+                <div class="metric-bar">
+                  <div class="metric-fill" style="width: 95%;"></div>
+                </div>
+              </div>
+              
+              <div class="metric">
+                <div class="metric-label">Integration</div>
+                <div class="metric-bar">
+                  <div class="metric-fill" style="width: 90%;"></div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="tool-footer">
+              <a href="/tool/cursor-ai" class="btn-secondary">View Details</a>
+              <button class="btn-compare active" data-tool-id="cursor-ai">
+                <i class="icon-check"></i>
+                Selected
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="view-more">
+          <button class="btn-load-more">
+            <span>Load More Tools</span>
+            <i class="icon-arrow-down"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+    
+    <section class="comparison-table-section">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">Side-by-Side <span class="gradient-text">Comparison</span></h2>
+          <p class="section-description">
+            Select tools to compare their features, performance metrics, and pricing
+          </p>
+        </div>
+        
+        <div class="selected-tools">
+          <div class="tool-pill">
+            <img src="/assets/logos/cursor.svg" alt="Cursor" class="tool-pill-logo">
+            <span>Cursor AI</span>
+            <button class="remove-tool"><i class="icon-close"></i></button>
+          </div>
+          
+          <button class="add-tool-btn">
+            <i class="icon-plus"></i>
+            <span>Add Tool</span>
+          </button>
+        </div>
+        
+        <div class="comparison-wrapper">
+          <div class="comparison-table">
+            <table>
+              <thead>
+                <tr>
+                  <th class="feature-column">Feature</th>
+                  <th>Cursor AI</th>
+                  <th class="empty-column">
+                    <div class="add-tool-col">
+                      <i class="icon-plus"></i>
+                      <span>Add Tool</span>
+                    </div>
+                  </th>
+                  <th class="empty-column">
+                    <div class="add-tool-col">
+                      <i class="icon-plus"></i>
+                      <span>Add Tool</span>
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="feature-column">Type</td>
+                  <td>Coding Editor + AI Assistant</td>
+                  <td class="empty-cell"></td>
+                  <td class="empty-cell"></td>
+                </tr>
+                <tr>
+                  <td class="feature-column">LLM Model</td>
+                  <td>GPT-4, Claude 3, Custom Models</td>
+                  <td class="empty-cell"></td>
+                  <td class="empty-cell"></td>
+                </tr>
+                <tr>
+                  <td class="feature-column">Programming Languages</td>
+                  <td>40+ languages</td>
+                  <td class="empty-cell"></td>
+                  <td class="empty-cell"></td>
+                </tr>
+                <tr>
+                  <td class="feature-column">Code Generation</td>
+                  <td><span class="check">✓</span> Advanced</td>
+                  <td class="empty-cell"></td>
+                  <td class="empty-cell"></td>
+                </tr>
+                <tr>
+                  <td class="feature-column">Code Explanation</td>
+                  <td><span class="check">✓</span> Detailed</td>
+                  <td class="empty-cell"></td>
+                  <td class="empty-cell"></td>
+                </tr>
+                <tr>
+                  <td class="feature-column">MCP Integration</td>
+                  <td><span class="check">✓</span> 35+ Services</td>
+                  <td class="empty-cell"></td>
+                  <td class="empty-cell"></td>
+                </tr>
+                <tr>
+                  <td class="feature-column">Pricing</td>
+                  <td>Free / $20 per month</td>
+                  <td class="empty-cell"></td>
+                  <td class="empty-cell"></td>
+                </tr>
+                <tr>
+                  <td class="feature-column">Custom Rules</td>
+                  <td><span class="check">✓</span> Extensive</td>
+                  <td class="empty-cell"></td>
+                  <td class="empty-cell"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
+        <div class="comparison-note">
+          <i class="icon-info"></i>
+          <p>Select up to 3 tools to compare side-by-side. For deeper analysis and personalized recommendations, use our <a href="/ai-chat">AI Chat Assistant</a>.</p>
+        </div>
+      </div>
+    </section>
+    
+    <section class="cta-section">
+      <div class="container">
+        <div class="cta-content">
+          <h2 class="cta-title">Need help choosing the right tools?</h2>
+          <p class="cta-description">
+            Our AI assistant can provide personalized recommendations based on your specific project requirements
+          </p>
+          
+          <div class="cta-actions">
+            <a href="/generate-mvp-plan" class="btn-primary">Generate MVP Plan</a>
+            <a href="/ai-chat" class="btn-secondary">Ask AI Assistant</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  
+  <!-- Include footer here -->
+  
+  <script src="/js/tool-comparison.js"></script>
+</body>
+</html> 

@@ -1,0 +1,62 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Build outputs
+dist
+dist-ssr
+build
+*.local
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Testing
+coverage
+
+# Temp files
+.temp
+.tmp
+tmp
+
+# Database files
+*.sqlite
+*.sqlite3
+*.db
+
+# Replit specific files
+.replit
+.breakpoints
+.config/
+.cursor/
+generated-icon.png
+
+# Misc
+server/public
+vite.config.ts.*
+*.tar.gz
+.cursor
