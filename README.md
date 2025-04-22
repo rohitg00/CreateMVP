@@ -34,7 +34,7 @@ A full-stack AI application for generating project prototypes and implementation
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/createmvp.git
+   git clone https://github.com/rohitg00/createmvp.git
    cd createmvp
    ```
 
