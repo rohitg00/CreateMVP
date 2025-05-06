@@ -1,22 +1,21 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Send, Loader2, Settings, Bot, User, Info, LogIn } from "lucide-react";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Send, Loader2, Settings, Bot, User, Key } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import ApiKeySettings from "./ApiKeySettings";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { motion, AnimatePresence } from "framer-motion";
-import { useUser } from "@/lib/userContext";
-import { Link } from "wouter";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
   timestamp: string;
-  model?: string; // Add model to track which AI model responded
+  model?: string;
 }
 
 interface ChatHistoryResponse {
@@ -28,11 +27,10 @@ interface ChatHistoryResponse {
   createdAt: string;
 }
 
-// Model provider logos - update with higher quality images and ensure all providers are covered
 const providerLogos = {
-  openai: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/OpenAI_Logo.svg/1024px-OpenAI_Logo.svg.png",
-  google: "https://www.gstatic.com/lamda/images/gemini_logo_512_c196d15b4e42ad11.png", // Higher quality Gemini logo
-  anthropic: "https://framerusercontent.com/images/nXLzUoLeko3J21YKJiWRCKzBLE.png",
+  openai: "https://static.vecteezy.com/system/resources/previews/022/227/364/non_2x/openai-chatgpt-logo-icon-free-png.png",
+  google: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Google_Gemini_logo.svg/2560px-Google_Gemini_logo.svg.png",
+  anthropic: "https://www.appengine.ai/uploads/images/profile/logo/Anthropic-AI.png",
   deepseek: "https://avatars.githubusercontent.com/u/145917633",
   meta: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Meta_Platforms_Inc._logo.svg/1280px-Meta_Platforms_Inc._logo.svg.png",
   chatglm: "https://cdn.tse4-mm.cn.bing.net/th/id/OIP-C.3J7B3GAsLdQ-caoA4NN9wAHaHa",
@@ -40,10 +38,9 @@ const providerLogos = {
   athene: "https://pbs.twimg.com/profile_images/1751975661099257856/83PSMX6w_400x400.jpg",
   xai: "https://grok.x.ai/assets/images/logo/logo.svg",
   yi: "https://www.01.ai/assets/logo.svg",
-  default: "https://cdn-icons-png.flaticon.com/512/4616/4616734.png" // Default logo for unknown providers
+  default: "https://cdn-icons-png.flaticon.com/512/4616/4616734.png"
 };
 
-// Model display names by provider and model ID
 const modelDisplayNames = {
   openai: {
     "gpt-4o": "GPT-4o",
@@ -94,131 +91,217 @@ export default function AiChat() {
   const [selectedModel, setSelectedModel] = useState("gemini-1.5-flash-002");
   const [selectedProvider, setSelectedProvider] = useState("google");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [preserveContext, setPreserveContext] = useState(true); // Add state for context preservation
+  const [preserveContext, setPreserveContext] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { user, setCredits } = useUser();
 
-  // Define scrollToBottom function here to fix the undefined error
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   };
 
-  // Fetch available API keys
-  const { data: apiKeys, isLoading: isLoadingKeys } = useQuery({
+  const { data: primaryApiKeys, isLoading: isLoadingPrimaryKeys } = useQuery({
     queryKey: ["/api/keys"],
     onSuccess: (data) => {
-      console.log("Available API keys:", data.map(k => k.provider));
+      console.log("Available API keys from primary endpoint:", data?.map(k => k.provider) || []);
+    },
+    onError: (error) => {
+      console.error("Error fetching primary API keys:", error);
     }
   });
 
-  // Fetch chat history
+  const { data: fallbackApiKeys, isLoading: isLoadingFallbackKeys } = useQuery({
+    queryKey: ["/api/api-keys"],
+    onSuccess: (data) => {
+      console.log("Available API keys from fallback endpoint:", data?.map(k => k.provider) || []);
+    },
+    onError: (error) => {
+      console.error("Error fetching fallback API keys:", error);
+    }
+  });
+
+  const apiKeys = useMemo(() => {
+    const primaryKeys = primaryApiKeys || [];
+    const fallbackKeys = fallbackApiKeys || [];
+    const keyMap = new Map();
+    primaryKeys.forEach(key => {
+      keyMap.set(key.provider, key);
+    });
+    fallbackKeys.forEach(key => {
+      if (!keyMap.has(key.provider)) {
+        keyMap.set(key.provider, key);
+      }
+    });
+    return Array.from(keyMap.values());
+  }, [primaryApiKeys, fallbackApiKeys]);
+
+  const isLoadingKeys = isLoadingPrimaryKeys || isLoadingFallbackKeys;
+
   const { data: historyData, isLoading: isLoadingHistory } = useQuery({
     queryKey: ["/api/chat/history"],
     onSuccess: (data: ChatHistoryResponse[]) => {
-      // Transform the response data to our Message format
       const transformed: Message[] = data.map((item) => ({
         role: item.role,
         content: item.content,
         timestamp: item.createdAt,
         model: item.model,
       }));
-      
-      // Set chat history from API response
       setChatHistory(transformed);
     },
   });
 
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
-      // Extract context from previous messages if preserveContext is enabled
       const contextMessages = preserveContext 
-        ? chatHistory.slice(-10) // Use last 10 messages for context regardless of model
-        : chatHistory.filter(msg => msg.model === selectedModel).slice(-10); // Or only use messages from the current model
-      
-      // Add current user message
+        ? chatHistory.slice(-10)
+        : chatHistory.filter(msg => msg.model === selectedModel).slice(-10);
+
       const userMessage = {
         role: "user", 
         content: message,
         model: selectedModel
       };
-      
+
       const messagesForAPI = [...contextMessages, userMessage].map(msg => ({
         role: msg.role,
         content: msg.content
       }));
-      
+
       console.log(`Sending request to /api/chat with model ${selectedModel} and ${messagesForAPI.length} messages`);
-      
-      // Log the API request for debugging
       console.log("API Request:", {
         model: selectedModel,
         messages: messagesForAPI,
         preserveContext
       });
-      
-      return apiRequest("POST", "/api/chat", {
-        model: selectedModel,
-        messages: messagesForAPI,
-        preserveContext
-      });
+
+      try {
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: selectedModel,
+            messages: messagesForAPI,
+            preserveContext
+          }),
+          credentials: "include",
+        });
+
+        console.log("Raw response status:", response.status);
+
+        if (!response.ok) {
+          let errorMessage = "Failed to send message";
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.error || errorMessage;
+          } catch (e) {
+            errorMessage = await response.text() || errorMessage;
+          }
+          throw new Error(errorMessage);
+        }
+
+        try {
+          const jsonData = await response.json();
+          console.log("Parsed JSON response:", jsonData);
+          return jsonData;
+        } catch (e) {
+          console.error("Failed to parse JSON response:", e);
+          const textData = await response.text();
+          console.log("Response as text:", textData);
+          return { response: textData };
+        }
+      } catch (error) {
+        console.error("Error in chat API request:", error);
+        throw error;
+      }
     },
     onSuccess: (data) => {
-      // Only update credits if the user is NOT using their own API key
-      // Check if user has an API key for the current provider
-      const isUsingOwnApiKey = apiKeys?.some(k => k.provider === selectedProvider && k.isUserProvided);
-      
-      // Update credits if provided in the response AND user is not using their own API key
-      if (data.creditsUsed && user && !isUsingOwnApiKey) {
-        setCredits(user.credits - data.creditsUsed);
-      }
-      
-      // Directly update the chat history with the response for immediate feedback
-      // Replace the latest "..." message with the actual response
-      setChatHistory(prev => {
-        const newHistory = [...prev];
-        // Find and replace the loading message
-        const loadingMsgIndex = newHistory.findIndex(msg => msg.content === "...");
-        if (loadingMsgIndex !== -1) {
-          newHistory[loadingMsgIndex] = {
-            role: "assistant",
-            content: data.response,
-            timestamp: new Date().toISOString(),
-            model: selectedModel
-          };
-        }
-        return newHistory;
-      });
-      
-      // Then invalidate the query to update history in the background (for consistency)
-      queryClient.invalidateQueries({ queryKey: ["/api/chat/history"] });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to send message",
-        variant: "destructive",
-      });
-      
-      // Replace the loading message with an error
+      console.log("Complete response data from API:", JSON.stringify(data, null, 2));
+      // Remove credits logic (no user/credits)
+      const responseText = typeof data === 'string' 
+        ? data 
+        : (data.response || data.message || data.content || data.text || 
+           (typeof data === 'object' && Object.values(data)[0]) || 
+           "No response received");
+
+      console.log("Extracted response text:", responseText);
+
       setChatHistory(prev => {
         const newHistory = [...prev];
         const loadingMsgIndex = newHistory.findIndex(msg => msg.content === "...");
         if (loadingMsgIndex !== -1) {
           newHistory[loadingMsgIndex] = {
             role: "assistant",
-            content: "Sorry, I encountered an error. Please check your API keys or try again later.",
+            content: responseText,
             timestamp: new Date().toISOString(),
             model: selectedModel
           };
         } else {
-          // If no loading message found, add a new error message
           newHistory.push({
             role: "assistant",
-            content: "Sorry, I encountered an error. Please check your API keys or try again later.",
+            content: responseText,
+            timestamp: new Date().toISOString(),
+            model: selectedModel
+          });
+        }
+        return newHistory;
+      });
+
+      setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+
+      queryClient.invalidateQueries({ queryKey: ["/api/chat/history"] });
+    },
+    onError: (error: any) => {
+      const isApiKeyError = error.response?.data?.error === "API_KEY_REQUIRED";
+      const provider = error.response?.data?.apiProvider || selectedProvider;
+
+      if (isApiKeyError) {
+        toast({
+          title: "API Key Required",
+          description: `You need to add your ${provider} API key in settings to use this model.`,
+          variant: "warning",
+          action: (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="border-yellow-700/50 bg-yellow-900/30 text-yellow-400 hover:bg-yellow-800/50"
+              onClick={() => setIsSettingsOpen(true)}
+            >
+              Add Key
+            </Button>
+          )
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to send message",
+          variant: "destructive",
+        });
+      }
+
+      setChatHistory(prev => {
+        const newHistory = [...prev];
+        const loadingMsgIndex = newHistory.findIndex(msg => msg.content === "...");
+        const errorMessage = isApiKeyError 
+          ? `I need an API key for ${provider} to respond. Please add your API key in settings.`
+          : "Sorry, I encountered an error. Please try again later.";
+
+        if (loadingMsgIndex !== -1) {
+          newHistory[loadingMsgIndex] = {
+            role: "assistant",
+            content: errorMessage,
+            timestamp: new Date().toISOString(),
+            model: selectedModel
+          };
+        } else {
+          newHistory.push({
+            role: "assistant",
+            content: errorMessage,
             timestamp: new Date().toISOString(),
             model: selectedModel
           });
@@ -228,21 +311,31 @@ export default function AiChat() {
     }
   });
 
-  // Define available models by provider
-  const modelsByProvider = {
+  const modelsByProvider: Record<string, {id: string, name: string}[]> = {
     openai: [
+      { id: "gpt-4.1", name: "GPT-4.1" },
+      { id: "gpt-4.1-mini", name: "GPT-4.1 Mini" },
+      { id: "gpt-4.1-nano", name: "GPT-4.1 Nano" },
       { id: "gpt-4o", name: "GPT-4o" },
       { id: "gpt-4-turbo", name: "GPT-4 Turbo" },
+      { id: "gpt-4", name: "GPT-4" },
       { id: "gpt-3.5-turbo", name: "GPT-3.5 Turbo" }
     ],
     google: [
+      { id: "gemini-2.5-flash-preview-04-17", name: "Gemini 2.5 Flash Preview" },
+      { id: "gemini-2.5-pro-preview-03-25", name: "Gemini 2.5 Pro Preview" },
+      { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash" },
+      { id: "gemini-2.0-flash-lite", name: "Gemini 2.0 Flash Lite" },
       { id: "gemini-1.5-flash-002", name: "Gemini 1.5 Flash" },
       { id: "gemini-1.5-pro-002", name: "Gemini 1.5 Pro" },
       { id: "gemini-1.0-pro", name: "Gemini 1.0 Pro" }
     ],
     anthropic: [
-      { id: "claude-3-5-sonnet-20241022", name: "Claude 3.5 Sonnet" },
+      { id: "claude-3-7-sonnet-20250219", name: "Claude 3.7 Sonnet" },
+      { id: "claude-3-5-sonnet-v2-20241022", name: "Claude 3.5 Sonnet v2" },
+      { id: "claude-3-5-haiku-20241022", name: "Claude 3.5 Haiku" },
       { id: "claude-3-opus-20240229", name: "Claude 3 Opus" },
+      { id: "claude-3-sonnet-20240229", name: "Claude 3 Sonnet" },
       { id: "claude-3-haiku-20240307", name: "Claude 3 Haiku" }
     ],
     deepseek: [
@@ -273,24 +366,29 @@ export default function AiChat() {
     ]
   };
 
-  // Handler for provider change
   const handleProviderChange = (provider: string) => {
     setSelectedProvider(provider);
-    // Set the first model of the new provider as selected
     if (modelsByProvider[provider]?.length > 0) {
       setSelectedModel(modelsByProvider[provider][0].id);
     }
   };
 
-  // Add a more robust useEffect to scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
   }, [chatHistory]);
-  
-  // Add a useEffect to better preserve context between chat history updates
+
+  useEffect(() => {
+    console.log("AiChat component rendered with:", {
+      selectedModel,
+      selectedProvider,
+      isLoadingHistory,
+      messagesCount: chatHistory.length
+    });
+    console.log("Current chat history:", JSON.stringify(chatHistory, null, 2));
+  }, [chatHistory, selectedModel, selectedProvider, isLoadingHistory]);
+
   useEffect(() => {
     if (historyData && preserveContext) {
-      // Ensure all messages have the currently selected model assigned when preserve context is enabled
       setChatHistory(prev => prev.map(msg => {
         if (msg.role === "assistant" && !msg.model) {
           return { ...msg, model: selectedModel };
@@ -307,93 +405,117 @@ export default function AiChat() {
       role: "user",
       content: message,
       timestamp: new Date().toISOString(),
-      model: selectedModel, // Ensure user messages also have the model property
+      model: selectedModel,
     };
 
-    // Add the user message to chat history
     setChatHistory((prev) => [...prev, userMessage]);
-    
-    // Create an assistant message placeholder with "typing" indicator
+
     const assistantPlaceholder: Message = {
       role: "assistant",
       content: "...",
       timestamp: new Date().toISOString(),
       model: selectedModel,
     };
-    
-    // Add the placeholder to chat
+
     setChatHistory((prev) => [...prev, assistantPlaceholder]);
-    
-    // Clear the input field
     setMessage("");
-    
-    // Scroll to bottom safely
+
     setTimeout(() => {
       scrollToBottom();
     }, 100);
 
     try {
-      // Use the sendMessageMutation which already has context handling
+      console.log("Before sending message - content:", userMessage.content);
       const response = await sendMessageMutation.mutateAsync(userMessage.content);
+      console.log("Message sent successfully, received response:", response);
 
-      // Update credits if applicable
-      if (response.creditsRemaining !== undefined && user?.plan === "free") {
-        setCredits(response.creditsRemaining);
-      }
-
-      // Replace the placeholder with the actual response
-      setChatHistory((prev) =>
-        prev.map((msg, i) =>
-          i === prev.length - 1
-            ? {
-                role: "assistant",
-                content: response.message || response.response,
-                timestamp: new Date().toISOString(),
-                model: selectedModel,
+      if (response && !response.error) {
+        console.log("Backup direct update with response:", response);
+        let responseText = '';
+        if (typeof response === 'string') {
+          responseText = response;
+        } else if (typeof response === 'object' && response !== null) {
+          responseText = response.response || 
+                         response.message || 
+                         response.content || 
+                         response.text || 
+                         response.answer ||
+                         response.result ||
+                         response.output ||
+                         '';
+          if (!responseText && typeof response === 'object') {
+            const values = Object.values(response);
+            for (const val of values) {
+              if (typeof val === 'string' && val.length > 0) {
+                responseText = val;
+                break;
               }
-            : msg
-        )
-      );
+            }
+          }
+        }
+        if (!responseText) {
+          responseText = "Received a response but couldn't extract the content. Please try again.";
+        }
+        console.log("Extracted response text for direct update:", responseText);
 
-      // Invalidate the history query to reflect the latest messages
-      queryClient.invalidateQueries({ queryKey: ["/api/chat/history"] });
+        setChatHistory(prev => {
+          const newHistory = [...prev];
+          const loadingIndex = newHistory.findIndex(msg => msg.content === "...");
+          if (loadingIndex !== -1) {
+            newHistory[loadingIndex] = {
+              role: "assistant",
+              content: responseText,
+              timestamp: new Date().toISOString(),
+              model: selectedModel
+            };
+          } else {
+            newHistory.push({
+              role: "assistant",
+              content: responseText,
+              timestamp: new Date().toISOString(),
+              model: selectedModel
+            });
+          }
+          return newHistory;
+        });
+
+        setTimeout(() => {
+          scrollToBottom();
+        }, 100);
+      }
     } catch (error) {
       console.error("Error sending message:", error);
-      
-      // Remove the placeholder message
-      setChatHistory((prev) => prev.slice(0, -1));
-      
-      toast({
-        title: "Error",
-        description: error.message || "Failed to get a response",
-        variant: "destructive",
+      setChatHistory(prev => {
+        const newHistory = [...prev];
+        const loadingIndex = newHistory.findIndex(msg => msg.content === "...");
+        const errorMessage = "Sorry, there was an error processing your request. Please try again.";
+        if (loadingIndex !== -1) {
+          newHistory[loadingIndex] = {
+            role: "assistant",
+            content: errorMessage,
+            timestamp: new Date().toISOString(),
+            model: selectedModel
+          };
+        }
+        return newHistory;
       });
     }
   };
 
-  // Get the display name for a model
   const getModelDisplayName = (model?: string) => {
     if (!model) return "AI Assistant";
-    
-    // Extract provider from model ID
     const provider = Object.keys(modelDisplayNames).find(p => 
       Object.keys(modelDisplayNames[p]).includes(model)
     );
-    
     if (provider && modelDisplayNames[provider][model]) {
       return modelDisplayNames[provider][model];
     }
-    
     return "AI Assistant";
   };
-  
-  // Enhanced function for getting model logos
+
   const getLogoForModel = (model?: string) => {
     if (!model) return providerLogos.default;
-    
-    // Extract provider from model name
     let provider = "default";
-    
     if (model.includes("gpt") || model.includes("o1-") || model.includes("o3-") || model.includes("text-")) {
       provider = "openai";
     } else if (model.includes("gemini")) {
@@ -415,11 +537,9 @@ export default function AiChat() {
     } else if (model.includes("yi")) {
       provider = "yi";
     }
-    
     return providerLogos[provider] || providerLogos.default;
   };
 
-  // Preload provider logos to avoid loading issues
   useEffect(() => {
     Object.values(providerLogos).forEach(url => {
       const img = new Image();
@@ -427,57 +547,7 @@ export default function AiChat() {
     });
   }, []);
 
-  // Check if user is logged in
-  if (!user) {
-    return (
-      <div className="flex flex-col h-full bg-gradient-to-b from-slate-900 to-indigo-950 rounded-xl border border-slate-800 shadow-xl p-8 text-center">
-        <div className="flex flex-col items-center justify-center h-full">
-          <Bot className="h-16 w-16 text-indigo-400 mb-4" />
-          <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400 mb-4">
-            Please Log In to Use AI Chat
-          </h2>
-          <p className="text-slate-300 max-w-md mb-8">
-            You need to be logged in to use the AI chat features. Sign up for free or log in to your account.
-          </p>
-          <div className="flex gap-4">
-            <Link href="/auth/login">
-              <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
-                <LogIn className="mr-2 h-4 w-4" />
-                Log In
-              </Button>
-            </Link>
-            <Link href="/auth/signup">
-              <Button variant="outline" className="border-indigo-500/50 bg-indigo-950/50 text-indigo-300 hover:bg-indigo-900/50">
-                Create Account
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Check if user has credits
-  if (user.credits <= 0) {
-    return (
-      <div className="flex flex-col h-full bg-gradient-to-b from-slate-900 to-indigo-950 rounded-xl border border-slate-800 shadow-xl p-8 text-center">
-        <div className="flex flex-col items-center justify-center h-full">
-          <div className="text-red-500 text-5xl mb-4">😢</div>
-          <h2 className="text-2xl font-bold text-red-400 mb-4">
-            Out of Credits
-          </h2>
-          <p className="text-slate-300 max-w-md mb-8">
-            You've used all your available credits. Upgrade to Pro plan to get more credits or wait for your credits to replenish.
-          </p>
-          <Link href="/auth/signup?plan=pro">
-            <Button className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700">
-              Upgrade to Pro
-            </Button>
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  // No authentication/credits checks
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-b from-slate-900 to-indigo-950 rounded-xl border border-slate-800 shadow-xl p-4">
@@ -490,59 +560,13 @@ export default function AiChat() {
         <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">
           Chat with AI Models
         </h2>
-        
+
         <div className="flex items-center gap-2">
-          <div className="flex flex-col sm:flex-row gap-2">
-            {/* Provider dropdown with logo */}
-            <div className="relative">
-              <select
-                value={selectedProvider}
-                onChange={(e) => handleProviderChange(e.target.value)}
-                className="bg-slate-800 border border-slate-700 text-slate-200 rounded-md pl-9 pr-3 py-1.5 text-sm focus:ring-indigo-500 focus:border-indigo-500 appearance-none"
-              >
-                {Object.keys(modelsByProvider).map(provider => {
-                  // Only show providers for which user has API keys
-                  const hasApiKey = apiKeys?.some(k => k.provider === provider);
-                  if (!hasApiKey && apiKeys?.length > 0) return null;
-                  
-                  return (
-                    <option key={provider} value={provider}>
-                      {provider.charAt(0).toUpperCase() + provider.slice(1)}
-                    </option>
-                  );
-                })}
-              </select>
-              {providerLogos[selectedProvider] && (
-                <div className="absolute left-2 top-1/2 transform -translate-y-1/2 w-5 h-5 rounded-full overflow-hidden">
-                  <img
-                    src={providerLogos[selectedProvider]}
-                    alt={selectedProvider}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.src = providerLogos.default; // Fallback to default if image fails to load
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-            
-            {/* Model dropdown */}
-            <select
-              value={selectedModel}
-              onChange={(e) => setSelectedModel(e.target.value)}
-              className="bg-slate-800 border border-slate-700 text-slate-200 rounded-md px-3 py-1.5 text-sm focus:ring-indigo-500 focus:border-indigo-500"
-            >
-              {modelsByProvider[selectedProvider]?.map(model => (
-                <option key={model.id} value={model.id}>
-                  {model.name}
-                </option>
-              ))}
-            </select>
-            
-            {/* Context preservation toggle */}
-            <div className="flex items-center gap-1.5 group relative">
-              <input
-                type="checkbox"
+          {/* Preserve Context Toggle */}
+          <div className="relative group">
+            <div className="flex items-center gap-1.5 bg-slate-800/50 rounded-md px-2 py-1 border border-slate-700/50 hover:border-slate-600/50 transition-colors duration-200">
+              <input 
+                type="checkbox" 
                 id="preserve-context"
                 checked={preserveContext}
                 onChange={() => setPreserveContext(!preserveContext)}
@@ -567,7 +591,53 @@ export default function AiChat() {
               </div>
             </div>
           </div>
-          
+
+          <div className="flex flex-col sm:flex-row gap-2">
+            {/* Provider dropdown with logo */}
+            <div className="relative">
+              <select
+                value={selectedProvider}
+                onChange={(e) => handleProviderChange(e.target.value)}
+                className="bg-slate-800 border border-slate-700 text-slate-200 rounded-md pl-9 pr-3 py-1.5 text-sm focus:ring-indigo-500 focus:border-indigo-500 appearance-none"
+              >
+                {Object.keys(modelsByProvider).map(provider => {
+                  const hasApiKey = apiKeys?.some(k => k.provider === provider);
+                  if (!hasApiKey && apiKeys?.length > 0) return null;
+                  return (
+                    <option key={provider} value={provider}>
+                      {provider.charAt(0).toUpperCase()+ provider.slice(1)}
+                    </option>
+                  );
+                })}
+              </select>
+              {providerLogos[selectedProvider] && (
+                <div className="absolute left-2 top-1/2 transform -translate-y-1/2 w-5 h-5 rounded-full overflow-hidden">
+                  <img
+                    src={providerLogos[selectedProvider]}
+                    alt={selectedProvider}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.src = providerLogos.default;
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Model dropdown */}
+            <select
+              value={selectedModel}
+              onChange={(e) => setSelectedModel(e.target.value)}
+              className="bg-slate-800 border border-slate-700 text-slate-200 rounded-md px-3 py-1.5 text-sm focus:ring-indigo-500 focus:border-indigo-500"
+            >
+              {modelsByProvider[selectedProvider]?.map(model => (
+                <option key={model.id} value={model.id}>
+                  {model.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
             <DialogTrigger asChild>
               <Button 
@@ -580,12 +650,20 @@ export default function AiChat() {
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] bg-slate-900 border-slate-700 max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">
+                  API Key Settings
+                </DialogTitle>
+                <DialogDescription className="text-slate-400 mt-1.5">
+                  Add your API keys to use different AI models. Your keys are encrypted and stored securely.
+                </DialogDescription>
+              </DialogHeader>
               <ApiKeySettings />
             </DialogContent>
           </Dialog>
         </div>
       </motion.div>
-      
+
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -602,24 +680,43 @@ export default function AiChat() {
               <Bot className="h-12 w-12 text-indigo-400 mx-auto mb-4" />
               <p className="text-lg font-medium text-white mb-2">No messages yet</p>
               <p className="text-slate-400 mb-6">Start a conversation with an AI assistant</p>
-              
+
               {!apiKeys || apiKeys.length === 0 ? (
-                <div className="mt-4 bg-yellow-900/30 p-3 rounded-lg border border-yellow-800/50">
-                  <div className="flex items-start gap-2">
-                    <Info className="h-5 w-5 text-yellow-500 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="text-sm text-yellow-400 font-medium">API Key Required</p>
-                      <p className="text-xs text-yellow-500/80 mt-1">You need to add API keys to use the chat</p>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="mt-3 border-yellow-700/50 bg-yellow-900/30 text-yellow-400 hover:bg-yellow-800/50"
-                        onClick={() => setIsSettingsOpen(true)}
-                      >
-                        <Settings className="h-3.5 w-3.5 mr-2" />
-                        Add API Keys
-                      </Button>
-                    </div>
+                <div className="bg-gradient-to-r from-amber-900/30 to-red-900/30 border border-amber-800/50 rounded-md p-4 mx-auto max-w-md mt-4">
+                  <div className="flex flex-col items-center text-center">
+                    <Key className="h-6 w-6 text-amber-400 mb-2" />
+                    <h4 className="text-amber-400 font-medium mb-1">API Key Required</h4>
+                    <p className="text-xs text-amber-300/90 mb-3">
+                      You must provide your own API keys to use the AI Chat feature. This helps us keep costs manageable.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsSettingsOpen(true)}
+                      className="bg-amber-800/30 hover:bg-amber-800/50 text-amber-300 border-amber-700/50"
+                    >
+                      <Key className="h-3.5 w-3.5 mr-2" />
+                      Add Your API Keys
+                    </Button>
+                  </div>
+                </div>
+              ) : !apiKeys?.some(k => k.provider === selectedProvider) ? (
+                <div className="bg-gradient-to-r from-amber-900/30 to-red-900/30 border border-amber-800/50 rounded-md p-4 mx-auto max-w-md mt-4">
+                  <div className="flex flex-col items-center text-center">
+                    <Key className="h-6 w-6 text-amber-400 mb-2" />
+                    <h4 className="text-amber-400 font-medium mb-1">Provider API Key Required</h4>
+                    <p className="text-xs text-amber-300/90 mb-3">
+                      You need to add an API key for {selectedProvider.charAt(0).toUpperCase() + selectedProvider.slice(1)} to use this model.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsSettingsOpen(true)}
+                      className="bg-amber-800/30 hover:bg-amber-800/50 text-amber-300 border-amber-700/50"
+                    >
+                      <Key className="h-3.5 w-3.5 mr-2" />
+                      Add {selectedProvider.charAt(0).toUpperCase() + selectedProvider.slice(1)} API Key
+                    </Button>
                   </div>
                 </div>
               ) : null}
@@ -655,7 +752,7 @@ export default function AiChat() {
                             loading="eager"
                             onError={(e) => {
                               console.log(`Error loading logo for ${msg.model}, using default`);
-                              e.currentTarget.src = providerLogos.default; // Fallback if image loading fails
+                              e.currentTarget.src = providerLogos.default;
                             }}
                           />
                         ) : (
@@ -667,7 +764,9 @@ export default function AiChat() {
                       {msg.role === "user" ? "You" : getModelDisplayName(msg.model)} • {new Date(msg.timestamp).toLocaleTimeString()}
                     </div>
                   </div>
-                  
+                  <div className="hidden">
+                    {console.log(`Message ${index} content: ${JSON.stringify(msg.content)}`)}
+                  </div>
                   {msg.content === "..." ? (
                     <div className="flex space-x-1 items-center py-2">
                       <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
@@ -675,10 +774,12 @@ export default function AiChat() {
                       <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
                     </div>
                   ) : (
-                    <div className="prose prose-invert prose-sm max-w-none">
-                      <ReactMarkdown>
-                        {msg.content}
-                      </ReactMarkdown>
+                    <div className="prose prose-invert prose-sm max-w-none overflow-auto markdown-content">
+                      <div className="prose prose-invert">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {typeof msg.content === 'string' ? msg.content : ''}
+                        </ReactMarkdown>
+                      </div>
                     </div>
                   )}
                 </motion.div>
@@ -688,7 +789,7 @@ export default function AiChat() {
           </div>
         )}
       </motion.div>
-      
+
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -722,4 +823,4 @@ export default function AiChat() {
       </motion.div>
     </div>
   );
-} 
+}
