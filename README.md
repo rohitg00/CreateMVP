@@ -2,6 +2,27 @@
 
 A full-stack AI application for generating project prototypes and implementation plans.
 
+[![Watch the demo video](https://img.youtube.com/vi/Kgy-Mbw0Elo/0.jpg)](https://www.youtube.com/watch?v=Kgy-Mbw0Elo)
+
+[Watch the demo video](https://www.youtube.com/watch?v=Kgy-Mbw0Elo)
+
+## What the Platform Delivers
+
+- **AI Plan Generator** – Using latest Gemini 2.5 Pro model which ranks `#1` on [LMarena](https://lmarena.ai/), Accepts a short requirements brief or a PDF; outputs a complete implementation bundle (technical spec, architecture, user‑flow diagram links, task breakdown, and a polished PRD).
+- **Multimodel Chat Console** – One pane to converse with GPT‑4.1, Claude 3.7 Sonnet, Gemini 2.5 Pro and other public as well as open source large models, keys stay local.
+- **AI Tool Comparison Hub** – Curated cards for 100+ dev‑centric AI tools to accelerate due‑diligence.
+- **MCP Servers & Rule Packs** – One‑click copies of community‑maintained server endpoints plus Cursor & Windsurf rules to supercharge IDE workflows.
+- **Open‑source PRD Creator** – Apache‑licensed codebase; self‑host or fork without restrictions.
+
+## Key Benefits
+
+- ✅ **Super Fast Generation**: Turn your idea into a detailed plan in minutes.
+- 📈 **Massive Detail Boost**: Our generated plans are now 4x more detailed & optimized (~40KB+ vs 11KB previous). Give AI the context it craves!
+- 👀 **Instant In-UI Preview**: View your full plan files directly in the browser.
+- 🔐 **Easy Access**: Log in securely with Google, GitHub, Replit.
+- 🧠 **Premium AI Chat**: Better conversations and insights with top AI models built-in.
+- 🚀 **Enhanced UI**: A smoother, faster planning experience.
+
 ## Features
 
 - Multi-model AI integration (OpenAI, Anthropic, Google, etc.)
