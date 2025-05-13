@@ -1,0 +1,205 @@
+/* Feature Comparison Section Styles */
+.feature-comparison-section {
+  padding: 6rem 0;
+  background-color: #0d1220;
+  position: relative;
+  overflow: hidden;
+}
+
+.feature-comparison-section::before {
+  content: "";
+  position: absolute;
+  top: -10%;
+  right: -5%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(138, 134, 252, 0.15) 0%, rgba(138, 134, 252, 0) 70%);
+  border-radius: 50%;
+  z-index: 1;
+}
+
+.feature-comparison-section::after {
+  content: "";
+  position: absolute;
+  bottom: -10%;
+  left: -5%;
+  width: 350px;
+  height: 350px;
+  background: radial-gradient(circle, rgba(249, 123, 243, 0.1) 0%, rgba(249, 123, 243, 0) 70%);
+  border-radius: 50%;
+  z-index: 1;
+}
+
+.feature-comparison-section .container {
+  position: relative;
+  z-index: 2;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 3.5rem;
+}
+
+.section-label {
+  display: inline-block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  padding: 0.5rem 1rem;
+  margin-bottom: 1rem;
+  background-color: rgba(138, 134, 252, 0.15);
+  color: #8a86fc;
+  border-radius: 50px;
+}
+
+.section-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 1.25rem;
+  line-height: 1.2;
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #8886fc 0%, #f97bf3 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.section-description {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.7);
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.comparison-table-wrapper {
+  background-color: rgba(255, 255, 255, 0.03);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  margin-bottom: 3rem;
+}
+
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.comparison-table th {
+  background-color: rgba(0, 0, 0, 0.3);
+  color: rgba(255, 255, 255, 0.85);
+  padding: 1.25rem 1.5rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.comparison-table th.createmvp-column {
+  background-color: rgba(138, 134, 252, 0.1);
+  color: #8a86fc;
+}
+
+.comparison-table td {
+  padding: 1.25rem 1.5rem;
+  color: rgba(255, 255, 255, 0.7);
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.feature-column {
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.createmvp-column {
+  background-color: rgba(138, 134, 252, 0.05);
+  color: #ffffff !important;
+}
+
+.highlight-row td {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #22c55e;
+  font-size: 1.2rem;
+  margin-right: 0.5rem;
+}
+
+.x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ef4444;
+  font-size: 1.2rem;
+  margin-right: 0.5rem;
+}
+
+.partial {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #f59e0b;
+  font-size: 0.9rem;
+  margin-right: 0.5rem;
+}
+
+.comparison-cta {
+  display: flex;
+  justify-content: center;
+  margin-top: 2.5rem;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  background-color: #8a86fc;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 0.875rem 1.75rem;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(138, 134, 252, 0.3);
+}
+
+.btn-primary:hover {
+  background-color: #7672f8;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(138, 134, 252, 0.4);
+}
+
+.icon-arrow-right {
+  font-size: 1.2rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .section-title {
+    font-size: 2rem;
+  }
+  
+  .comparison-table th,
+  .comparison-table td {
+    padding: 1rem;
+    font-size: 0.9rem;
+  }
+  
+  .comparison-table-wrapper {
+    overflow-x: auto;
+  }
+  
+  .comparison-table {
+    min-width: 650px;
+  }
+} 

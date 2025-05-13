@@ -2,6 +2,9 @@
 
 A full-stack AI application for generating project prototypes and implementation plans.
 
+![CreateMVP Files](client/public/createmvp-files.png)
+
+## Demo Video
 [![Watch the demo video](https://img.youtube.com/vi/Kgy-Mbw0Elo/0.jpg)](https://www.youtube.com/watch?v=Kgy-Mbw0Elo)
 
 [Watch the demo video](https://www.youtube.com/watch?v=Kgy-Mbw0Elo)
