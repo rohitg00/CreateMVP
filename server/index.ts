@@ -1,7 +1,8 @@
+import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import generatePlanRouter from "./routes/generate-plan";
+import router from "./routes/generate-plan";
 import { storage } from "./storage";
 
 // Function to initialize system API keys
@@ -57,8 +58,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Register routes
-app.use("/api/generate-plan", generatePlanRouter);
-app.use("/api/latest-plan-zip", generatePlanRouter);
+app.use("/api/generate-plan", router);
+app.use("/api/latest-plan-zip", router);
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -110,7 +111,7 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  const PORT = process.env.PORT || 5000;
+  const PORT = Number(process.env.PORT || 5000);
   server.listen(PORT, "0.0.0.0", () => {
     log(`serving on port ${PORT}`);
   });

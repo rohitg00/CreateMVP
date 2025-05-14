@@ -65,6 +65,7 @@ A full-stack AI application for generating project prototypes and implementation
 2. Install dependencies:
    ```bash
    npm install
+   npm install dotenv && npm install --save-dev @types/dotenv
    ```
 
 3. Create a `.env` file in the root directory with the following variables:
@@ -85,17 +86,23 @@ A full-stack AI application for generating project prototypes and implementation
    # Add other API keys as needed
    ```
 
-4. Set up the database:
+4. Make sure the following files exist:
+   - `shared/schema.ts`: Contains database table definitions
+   - `drizzle.config.ts`: Updated to import dotenv
+   - `server/index.ts`: Updated to import dotenv
+   - `client/src/main.tsx`: Includes QueryClientProvider and UserProvider
+
+5. Set up the database:
    ```bash
    npm run db:push
    ```
 
-5. Start the development server:
+6. Start the development server:
    ```bash
    npm run dev
    ```
 
-6. Open [http://localhost:5000](http://localhost:5000) in your browser.
+7. Open [http://localhost:5000](http://localhost:5000) in your browser.
 
 ## Production Deployment
 

@@ -3,15 +3,14 @@ import multer from "multer";
 import { PDFExtract } from "pdf.js-extract";
 import { apiRequest } from "../lib/api";
 import archiver from "archiver";
-import { postgresStorage as storage } from "../storage";
-import * as Express from "express"; // For properly typed Express Request/Response
-import crypto from "crypto";
+import { storage } from "../storage";
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
-interface MulterRequest extends Express.Request {
-  file?: Express.Multer.File;
+// Define MulterRequest interface with file property from multer using any type to avoid complex typing issues
+interface MulterRequest extends Request {
+  file?: any; // Using any type to avoid complex typing issues with multer
 }
 
 // Helper function to create markdown content
@@ -132,7 +131,10 @@ Focus ONLY on the described project.`
       if (content.includes("Please provide the requirements") || 
           content.includes("I need the requirements") ||
           content.includes("Because no specifications were provided")) {
-  return content;
+        throw new Error(`Failed to generate valid content for ${filename}: Model is asking for more requirements`);
+      }
+      
+      return content;
 }
 
 router.post("/", upload.single("file"), async (req: MulterRequest, res: Response) => {
@@ -264,22 +266,6 @@ router.post("/", upload.single("file"), async (req: MulterRequest, res: Response
     archive.on('finish', async () => {
       const zipBuffer = Buffer.concat(chunks);
       console.log(`ZIP generated: ${zipBuffer.length} bytes`);
-
-      // Generate hash from the requirements text
-      const requirementsHash = generateRequirementsHash(finalRequirements);
-      console.log(`Generated requirements hash: ${requirementsHash}`);
-      
-      try {
-        // Store the generated plan in the database with the hash
-        await storage.createGeneratedPlan({
-          requirementsHash: requirementsHash,
-          requirementsText: finalRequirements.substring(0, 2000), // Store first 2000 chars for debugging
-          createdAt: new Date(),
-        });
-      } catch (error) {
-        // Log but don't fail the request if storage fails
-        console.error(`Error storing plan in database:`, error);
-      }
 
       // Return success response with explicit content type
       res.setHeader('Content-Type', 'application/json');
