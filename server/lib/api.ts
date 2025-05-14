@@ -117,29 +117,10 @@ export async function apiRequest(method: string, endpoint: string, data: any) {
       
       // Format the request with the proper Google Generative AI format
       // We need to use different request formats based on the model
-      const result = await model.generateContent(formattedMessage, {
-        safetySettings: [
-          {
-            category: "HARM_CATEGORY_HARASSMENT",
-            threshold: "BLOCK_NONE"
-          },
-          {
-            category: "HARM_CATEGORY_HATE_SPEECH",
-            threshold: "BLOCK_NONE"
-          },
-          {
-            category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-            threshold: "BLOCK_NONE"
-          },
-          {
-            category: "HARM_CATEGORY_DANGEROUS_CONTENT",
-            threshold: "BLOCK_NONE"
-          }
-        ]
-      });
+      const result = await model.generateContent(formattedMessage);
       
-      const response = await result.response;
-      const text = response.text();
+      // Correctly extract the text from the response
+      const text = result.response.text();
 
       if (!text) {
         throw new Error("Empty response from Gemini API");
