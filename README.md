@@ -7,7 +7,8 @@ A full-stack AI application for generating project prototypes and implementation
 ## Demo Video
 [![Watch the demo video](https://img.youtube.com/vi/Kgy-Mbw0Elo/0.jpg)](https://www.youtube.com/watch?v=Kgy-Mbw0Elo)
 
-[Watch the demo video](https://www.youtube.com/watch?v=Kgy-Mbw0Elo)
+## Our latest featured Demo
+[![Our latest conference talk](https://img.youtube.com/vi/A7OV2rOIp2Y/0.jpg)](https://www.youtube.com/watch?v=A7OV2rOIp2Y)
 
 ## What the Platform Delivers
 
