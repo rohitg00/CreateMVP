@@ -5,24 +5,58 @@ import OpenAI from "openai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import Anthropic from "@anthropic-ai/sdk";
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Declare client variables without initializing
+let openai: OpenAI | undefined;
+let anthropic: Anthropic | undefined;
+let deepseek: OpenAI | undefined;
+let genAI: GoogleGenerativeAI | undefined;
 
-// Initialize Anthropic client 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+function getOpenAIClient(): OpenAI {
+  if (!openai) {
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error("OPENAI_API_KEY is not set in environment variables.");
+    }
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+  }
+  return openai;
+}
 
-// Initialize DeepSeek client (also using OpenAI's SDK but with custom baseURL)
-const deepseek = new OpenAI({
-  apiKey: process.env.DEEPSEEK_API_KEY,
-  baseURL: "https://api.deepseek.com/v1",
-});
+function getAnthropicClient(): Anthropic {
+  if (!anthropic) {
+    if (!process.env.ANTHROPIC_API_KEY) {
+      throw new Error("ANTHROPIC_API_KEY is not set in environment variables.");
+    }
+    anthropic = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY,
+    });
+  }
+  return anthropic;
+}
 
-// Initialize Google Generative AI client
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || '');
+function getDeepSeekClient(): OpenAI {
+  if (!deepseek) {
+    if (!process.env.DEEPSEEK_API_KEY) {
+      throw new Error("DEEPSEEK_API_KEY is not set in environment variables.");
+    }
+    deepseek = new OpenAI({
+      apiKey: process.env.DEEPSEEK_API_KEY,
+      baseURL: "https://api.deepseek.com/v1",
+    });
+  }
+  return deepseek;
+}
+
+function getGoogleClient(): GoogleGenerativeAI {
+  if (!genAI) {
+    if (!process.env.GOOGLE_API_KEY) {
+      throw new Error("GOOGLE_API_KEY is not set in environment variables.");
+    }
+    genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+  }
+  return genAI;
+}
 
 /**
  * Make an API request to the appropriate AI provider based on the model
@@ -34,7 +68,8 @@ export async function apiRequest(method: string, endpoint: string, data: any) {
     // OpenAI models (gpt-4, gpt-3.5-turbo, etc.)
     if (data.model?.startsWith("gpt") || data.model?.startsWith("text-")) {
       console.log("Using OpenAI API for model:", data.model);
-      const response = await openai.chat.completions.create({
+      const client = getOpenAIClient();
+      const response = await client.chat.completions.create({
         model: data.model,
         messages: data.messages,
         max_tokens: data.maxTokens || 2048,
@@ -51,6 +86,7 @@ export async function apiRequest(method: string, endpoint: string, data: any) {
     // Anthropic models (claude-3 variants)
     else if (data.model?.startsWith("claude")) {
       console.log("Using Anthropic API for model:", data.model);
+      const client = getAnthropicClient();
       // the newest Anthropic model is "claude-3-7-sonnet-20250219" which was released February 24, 2025
       
       // Convert message format from OpenAI to Anthropic
@@ -59,7 +95,7 @@ export async function apiRequest(method: string, endpoint: string, data: any) {
         content: msg.content
       }));
       
-      const response = await anthropic.messages.create({
+      const response = await client.messages.create({
         model: data.model,
         messages: messages,
         max_tokens: data.maxTokens || 2048,
@@ -89,7 +125,8 @@ export async function apiRequest(method: string, endpoint: string, data: any) {
     // DeepSeek models
     else if (data.model?.startsWith("deepseek")) {
       console.log("Using DeepSeek API for model:", data.model);
-      const response = await deepseek.chat.completions.create({
+      const client = getDeepSeekClient();
+      const response = await client.chat.completions.create({
         model: data.model,
         messages: data.messages,
         max_tokens: data.maxTokens || 2048,
@@ -106,9 +143,9 @@ export async function apiRequest(method: string, endpoint: string, data: any) {
     // Google Gemini models
     else if (data.model?.startsWith("gemini")) {
       console.log("Using Google AI for model:", data.model);
-      
+      const client = getGoogleClient();
       // Use the correct model name from the request
-      const model = genAI.getGenerativeModel({ model: data.model });
+      const model = client.getGenerativeModel({ model: data.model });
       
       // Format messages into Google Gemini format
       const formattedMessage = data.messages.reduce((acc: string, msg: any) => {

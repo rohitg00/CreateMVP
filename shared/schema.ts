@@ -1,4 +1,23 @@
 import { pgTable, serial, text, boolean, timestamp, integer } from "drizzle-orm/pg-core";
+import { z } from "zod";
+
+// System user ID constant
+export const SYSTEM_USER_ID = 1; // Default system user ID
+
+// Zod validation schemas
+export const insertApiKeySchema = z.object({
+  provider: z.string(),
+  key: z.string(),
+  isUserProvided: z.boolean().optional(),
+});
+
+export const insertChatMessageSchema = z.object({
+  userId: z.number(),
+  model: z.string(),
+  role: z.string(),
+  content: z.string(),
+  metadata: z.record(z.unknown()).nullable(),
+});
 
 // API Keys table
 export const apiKeys = pgTable("api_keys", {
