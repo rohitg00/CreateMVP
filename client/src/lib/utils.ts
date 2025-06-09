@@ -1,3 +1,16 @@
+
+export const setPolarToken = (token: string) => {
+  localStorage.setItem('polar_customer_token', token);
+};
+
+export const getPolarToken = () => {
+  return localStorage.getItem('polar_customer_token');
+};
+
+export const clearPolarToken = () => {
+  localStorage.removeItem('polar_customer_token');
+};
+
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 

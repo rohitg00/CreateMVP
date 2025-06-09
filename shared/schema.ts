@@ -1,51 +1,50 @@
-import { pgTable, serial, text, boolean, timestamp, integer } from "drizzle-orm/pg-core";
-import { z } from "zod";
+import {
+  sqliteTable,
+  text, 
+  integer
+} from 'drizzle-orm/sqlite-core';
 
-// System user ID constant
-export const SYSTEM_USER_ID = 1; // Default system user ID
-
-// Zod validation schemas
-export const insertApiKeySchema = z.object({
-  provider: z.string(),
-  key: z.string(),
-  isUserProvided: z.boolean().optional(),
+// Users table - simplified for self-hosted version
+export const users = sqliteTable('users', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  username: text('username').unique().notNull(),
+  email: text('email').unique(),
+  hashedPassword: text('hashed_password'),
+  firstName: text('first_name'),
+  lastName: text('last_name'),
+  bio: text('bio'),
+  profileImageUrl: text('profile_image_url'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
 
-export const insertChatMessageSchema = z.object({
-  userId: z.number(),
-  model: z.string(),
-  role: z.string(),
-  content: z.string(),
-  metadata: z.record(z.unknown()).nullable(),
+// API keys table for LLM providers
+export const apiKeys = sqliteTable('api_keys', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  provider: text('provider').notNull(),
+  key: text('key').notNull(),
+  isUserProvided: integer('is_user_provided', { mode: 'boolean' }).notNull().default(true),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date())
 });
 
-// API Keys table
-export const apiKeys = pgTable("api_keys", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
-  provider: text("provider").notNull(),
-  key: text("key").notNull(),
-  isUserProvided: boolean("is_user_provided").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+// Chat messages table
+export const chatMessages = sqliteTable('chat_messages', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  model: text('model').notNull(),
+  role: text('role').notNull(),
+  content: text('content').notNull(),
+  metadata: text('metadata'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date())
 });
 
-// Chat Messages table
-export const chatMessages = pgTable("chat_messages", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
-  content: text("content").notNull(),
-  role: text("role").notNull(),
-  conversationId: text("conversation_id").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+// Types
+export type User = typeof users.$inferSelect;
+export type InsertUser = typeof users.$inferInsert;
 
-// Users table
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  email: text("email").unique().notNull(),
-  name: text("name"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+export type ApiKey = typeof apiKeys.$inferSelect;
+export type InsertApiKey = typeof apiKeys.$inferInsert;
 
-// Other tables can be added as needed 
+export type ChatMessage = typeof chatMessages.$inferSelect;
+export type InsertChatMessage = typeof chatMessages.$inferInsert;

@@ -4,7 +4,7 @@ export interface Tool {
   name: string;
   description: string;
   url: string;
-  icon: keyof typeof Si;
+  icon: string;
   category: CategoryType;
   pricing: string;
   features: string[];
@@ -43,7 +43,7 @@ export const tools: Tool[] = [
     url: "https://v0.dev",
     icon: "SiVercel",
     category: "Design & UI",
-    pricing: "Free tier available, Pro from $5/month",
+    pricing: "Free tier available, Pro from $20/month",
     features: ["Component generation", "Responsive design", "Real-time preview"],
     useCase: "Rapid UI prototyping and development"
   },
@@ -53,7 +53,7 @@ export const tools: Tool[] = [
     url: "https://replit.com",
     icon: "SiReplit",
     category: "Development Environment",
-    pricing: "Free tier, Pro from $7/month",
+    pricing: "Free tier, Pro from $20/month",
     features: ["AI code generation", "Real-time collaboration", "Hosted development"],
     useCase: "Full-stack development and collaboration"
   },
@@ -71,7 +71,7 @@ export const tools: Tool[] = [
     name: "Cursor",
     description: "AI-powered code editor",
     url: "https://cursor.com",
-    icon: "SiVisualstudiocode",
+    icon: "https://images.seeklogo.com/logo-png/61/3/cursor-logo-png_seeklogo-611587.png",
     category: "Development Environment",
     pricing: "Free",
     features: ["AI code completion", "Code explanation", "Refactoring"],
@@ -83,7 +83,7 @@ export const tools: Tool[] = [
     url: "https://lovable.dev",
     icon: "SiFramer",
     category: "Design & UI",
-    pricing: "Contact for pricing",
+    pricing: "Starter tier from $20/month",
     features: ["Design system generation", "Component library", "Theme customization"],
     useCase: "Creating consistent design systems"
   },
@@ -93,7 +93,7 @@ export const tools: Tool[] = [
     url: "https://tabnine.com",
     icon: "SiIntellijidea",
     category: "Code Generation",
-    pricing: "Free tier, Pro from $12/month",
+    pricing: "Free tier, Pro from $9/month",
     features: ["Code completion", "Team learning", "Security focused"],
     useCase: "Intelligent code suggestions"
   },
@@ -111,7 +111,7 @@ export const tools: Tool[] = [
     name: "CodeWhisperer",
     description: "Amazon's AI coding companion",
     url: "https://aws.amazon.com/codewhisperer",
-    icon: "SiAmazonaws",
+    icon: "SiAmazon",
     category: "Code Generation",
     pricing: "Free for individual use",
     features: ["Code suggestions", "Security scans", "AWS integration"],

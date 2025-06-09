@@ -1,0 +1,34 @@
+[
+  {
+    "id": 1,
+    "userId": 1,
+    "provider": "openai",
+    "key": "sk-replace-me",
+    "isUserProvided": false,
+    "createdAt": "2025-04-20T16:42:16.787Z"
+  },
+  {
+    "id": 2,
+    "userId": 1,
+    "provider": "google",
+    "key": "AIza-replace-me",
+    "isUserProvided": false,
+    "createdAt": "2025-04-20T16:42:16.801Z"
+  },
+  {
+    "id": 3,
+    "userId": 1,
+    "provider": "anthropic",
+    "key": "sk-replace-me",
+    "isUserProvided": false,
+    "createdAt": "2025-04-20T16:42:16.802Z"
+  },
+  {
+    "id": 4,
+    "userId": 1,
+    "provider": "deepseek",
+    "key": "sk-replace-me",
+    "isUserProvided": false,
+    "createdAt": "2025-04-20T16:42:16.802Z"
+  }
+]

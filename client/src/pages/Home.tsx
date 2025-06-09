@@ -20,10 +20,10 @@ export default function Home() {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
-    
+
     checkMobile();
     window.addEventListener('resize', checkMobile);
-    
+
     return () => {
       window.removeEventListener('resize', checkMobile);
     };
@@ -73,7 +73,28 @@ export default function Home() {
         </div>
       </motion.div>
 
-      {/* Process Section */}
+      {/* Badges Section */}
+      <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
+        <a href="https://www.producthunt.com/posts/createmvp-build-apps-faster-with-ai?embed=true&utm_source=badge-featured&utm_medium=badge&utm_souce=badge-createmvp-build-apps-faster-with-ai" target="_blank" rel="noopener noreferrer" className="block">
+          <img 
+            src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=956027&theme=light&t=1745322386388" 
+            alt="CreateMVP: Build Apps Faster with AI - Create MVPs with AI in seconds | Product Hunt" 
+            className="w-[250px] h-[54px]"
+            width="250" 
+            height="54" 
+          />
+        </a>
+        <a href="https://startupfa.me/s/createmvp?utm_source=createmvps.app" target="_blank" rel="noopener noreferrer" className="block">
+          <img 
+            src="https://startupfa.me/badges/featured-badge.webp" 
+            alt="Featured on Startup Fame" 
+            className="w-[171px] h-[54px]"
+            width="171" 
+            height="54" 
+          />
+        </a>
+      </div>
+
       <section className={sectionClasses}>
         <div className={containerClasses}>
           <motion.div

@@ -10,6 +10,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { tools, categories } from "@/data/tools";
 import * as Si from "react-icons/si";
 import { Badge } from "@/components/ui/badge";
+import { LucideProps, Package } from "lucide-react";
+
+type IconType = React.ComponentType<LucideProps>;
 
 export default function ToolComparison() {
   const [selectedTools, setSelectedTools] = useState<string[]>([]);
@@ -26,7 +29,16 @@ export default function ToolComparison() {
 
   const selectedToolsData = selectedTools.map(name => 
     tools.find(tool => tool.name === name)
-  ).filter(Boolean);
+  ).filter((tool): tool is NonNullable<typeof tool> => tool !== null && tool !== undefined);
+
+  const getIconComponent = (iconName: keyof typeof Si): IconType => {
+    const Icon = Si[iconName];
+    if (typeof Icon === 'function' || (typeof Icon === 'object' && Icon !== null && typeof (Icon as any).$$typeof === 'symbol')) {
+       return Icon as IconType; 
+    }
+    console.warn(`Icon "${iconName}" not found or invalid in react-icons/si. Using default.`);
+    return Package;
+  };
 
   return (
     <div className="w-full max-w-6xl mx-auto p-4">
@@ -61,8 +73,7 @@ export default function ToolComparison() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {selectedToolsData.map(tool => {
-          if (!tool) return null;
-          const IconComponent = Si[tool.icon];
+          const IconComponent = getIconComponent(tool.icon);
           
           return (
             <Card key={tool.name} className="relative">
@@ -74,7 +85,7 @@ export default function ToolComparison() {
               </button>
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-4">
-                  {IconComponent && <IconComponent className="w-6 h-6" />}
+                  <IconComponent className="w-6 h-6 flex-shrink-0" />
                   <h3 className="font-semibold">{tool.name}</h3>
                 </div>
                 
