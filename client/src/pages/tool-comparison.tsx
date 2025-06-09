@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Search, Filter, ArrowRight, Star, StarHalf, CheckCircle, Plus, X, Info } from "lucide-react";
+import { Search, Filter, ArrowRight, Star, StarHalf, CheckCircle, Plus, X, Info, Package, LucideProps, Image as ImageIcon, FileText, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -8,6 +8,24 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { tools, categories, Tool } from "@/data/tools"; // Import from data file instead of defining here
 import * as Si from "react-icons/si"; // Import all icons from react-icons/si
 import React from "react";
+
+// Define a type for the icon component
+type IconType = React.ComponentType<LucideProps>;
+
+// Define specific Si icons we know we'll use to help with tree-shaking and clarity
+const { 
+  SiReddit, 
+  SiX, 
+  SiYcombinator, 
+  SiYoutube, 
+  SiProducthunt, 
+  SiGithub, 
+  SiClaude, // Assuming SiClaude exists, adjust if needed
+  SiOpenai, // For ChatGPT
+  SiMidjourney, 
+  SiDalle, 
+  // Add others if needed, e.g., SiStablediffusion - check actual names
+} = Si;
 
 export default function ToolComparisonPage() {
   const [isVisible, setIsVisible] = useState(false);
@@ -36,6 +54,18 @@ export default function ToolComparisonPage() {
     rating: false
   });
   
+  // Function to safely get the icon component
+  const getIconComponent = (iconName: keyof typeof Si): IconType => {
+    const Icon = Si[iconName];
+    // Check if the retrieved value is a valid React component
+    if (typeof Icon === 'function' || (typeof Icon === 'object' && Icon !== null && typeof (Icon as any).$$typeof === 'symbol')) {
+      // Cast to IconType, assuming Si icons have compatible props (like className)
+      return Icon as IconType; 
+    }
+    console.warn(`Icon "${iconName}" not found or invalid in react-icons/si. Using default.`);
+    return Package; // Fallback to Lucide's Package icon
+  };
+
   useEffect(() => {
     setIsVisible(true);
     
@@ -77,7 +107,7 @@ export default function ToolComparisonPage() {
   // Get data for selected tools
   const selectedToolsData = selectedTools
     .map(name => tools.find(tool => tool.name === name))
-    .filter(Boolean) as Tool[];
+    .filter((tool): tool is Tool => tool !== undefined);
 
   const handleGetRecommendation = () => {
     // Simple algorithm to recommend a tool based on user preferences
@@ -174,7 +204,9 @@ export default function ToolComparisonPage() {
       
       if (compareParam) {
         const toolNames = compareParam.split(',');
-        setSelectedTools(toolNames.filter(name => tools.some(tool => tool.name === name)));
+        // Filter toolNames to ensure they exist in the main tools list before setting state
+        const validToolNames = toolNames.filter(name => tools.some(tool => tool.name === name));
+        setSelectedTools(validToolNames);
       }
     }
   }, []);
@@ -312,69 +344,70 @@ export default function ToolComparisonPage() {
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {filteredTools.map((tool) => (
-              <motion.div
-                key={tool.name}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 20 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className={`bg-slate-800/50 backdrop-blur-md rounded-xl border ${selectedTools.includes(tool.name) ? 'border-indigo-500/50 shadow-lg shadow-indigo-500/10' : 'border-slate-700/50'} overflow-hidden hover:border-indigo-500/70 transition-all`}
-              >
-                <div className="p-5">
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="h-10 w-10 bg-slate-700/70 rounded-md flex items-center justify-center overflow-hidden">
-                      {/* Use the actual icon from the data file instead of placeholder */}
-                      {tool.icon && Si[tool.icon] ? 
-                        React.createElement(Si[tool.icon], { className: "h-6 w-6 text-white" }) :
-                        <img src={`https://picsum.photos/seed/${tool.name}/40/40`} alt={tool.name} className="h-6 w-6" />
-                      }
-                    </div>
-                    
-                    <div className="flex items-center">
-                      <span className="text-white text-sm">{tool.category}</span>
+            {filteredTools.map((tool) => {
+              // Use the helper function to get the icon
+              const IconComponent = getIconComponent(tool.icon);
+              return (
+                <motion.div
+                  key={tool.name}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 20 }}
+                  transition={{ duration: 0.6, delay: 0.2 }}
+                  className={`bg-slate-800/50 backdrop-blur-md rounded-xl border ${selectedTools.includes(tool.name) ? 'border-indigo-500/50 shadow-lg shadow-indigo-500/10' : 'border-slate-700/50'} overflow-hidden hover:border-indigo-500/70 transition-all`}
+                >
+                  <div className="p-5">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="h-10 w-10 bg-slate-700/70 rounded-md flex items-center justify-center overflow-hidden">
+                        {/* Render the obtained IconComponent */}
+                        <IconComponent className="h-6 w-6 text-white" />
+                      </div>
+                      
+                      <div className="flex items-center">
+                        <span className="text-white text-sm">{tool.category}</span>
+                        </div>
+                      </div>
+                      
+                      <h3 className="text-lg font-semibold text-white mb-1">{tool.name}</h3>
+                      <div className="text-xs font-medium text-indigo-300 bg-indigo-900/30 inline-block px-2 py-0.5 rounded-md mb-3">
+                        {tool.category}
+                      </div>
+                      
+                      <p className="text-slate-300 text-sm mb-4 line-clamp-3">{tool.description}</p>
+                      
+                      <div className="space-y-3 mb-5">
+                        <div>
+                          <div className="flex justify-between text-xs mb-1">
+                            <span className="text-slate-400">Pricing</span>
+                            <span className="text-white">{tool.pricing}</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          className="flex-1 text-sm h-9 bg-slate-900/50 border-slate-700 text-white hover:bg-slate-800 hover:text-white"
+                          onClick={() => window.open(tool.url, '_blank')}
+                        >
+                          View Details
+                        </Button>
+                        
+                        <Button 
+                          variant={selectedTools.includes(tool.name) ? "default" : "outline"} 
+                          className={`h-9 px-3 ${selectedTools.includes(tool.name) ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-slate-900/50 border-slate-700 text-white hover:bg-slate-800'}`}
+                          onClick={() => handleToolSelection(tool.name)}
+                        >
+                          {selectedTools.includes(tool.name) ? (
+                            <CheckCircle className="h-5 w-5" />
+                          ) : (
+                            <Plus className="h-5 w-5" />
+                          )}
+                        </Button>
                       </div>
                   </div>
-                  
-                  <h3 className="text-lg font-semibold text-white mb-1">{tool.name}</h3>
-                  <div className="text-xs font-medium text-indigo-300 bg-indigo-900/30 inline-block px-2 py-0.5 rounded-md mb-3">
-                    {tool.category}
-                  </div>
-                  
-                  <p className="text-slate-300 text-sm mb-4 line-clamp-3">{tool.description}</p>
-                  
-                  <div className="space-y-3 mb-5">
-                    <div>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="text-slate-400">Pricing</span>
-                        <span className="text-white">{tool.pricing}</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      className="flex-1 text-sm h-9 bg-slate-900/50 border-slate-700 text-white hover:bg-slate-800 hover:text-white"
-                      onClick={() => window.open(tool.url, '_blank')}
-                    >
-                      View Details
-                    </Button>
-                    
-                    <Button 
-                      variant={selectedTools.includes(tool.name) ? "default" : "outline"} 
-                      className={`h-9 px-3 ${selectedTools.includes(tool.name) ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-slate-900/50 border-slate-700 text-white hover:bg-slate-800'}`}
-                      onClick={() => handleToolSelection(tool.name)}
-                    >
-                      {selectedTools.includes(tool.name) ? (
-                        <CheckCircle className="h-5 w-5" />
-                      ) : (
-                        <Plus className="h-5 w-5" />
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </div>
           
           <div className="mt-10 text-center">
@@ -403,27 +436,28 @@ export default function ToolComparisonPage() {
             <div className="bg-slate-800/70 backdrop-blur-md rounded-xl p-6 mb-6 border border-slate-700/50">
               <h3 className="text-lg font-semibold text-white mb-4">Selected Tools</h3>
               <div className="flex flex-wrap gap-3">
-              {selectedToolsData.map((tool) => (
-                <div 
-                    key={tool?.name} 
-                    className="flex items-center gap-2 bg-indigo-900/40 rounded-full pl-3 pr-2 py-1.5 border border-indigo-500/30"
-                >
-                  <div className="h-6 w-6 bg-slate-700 rounded-full flex items-center justify-center overflow-hidden">
-                      {/* Use the actual icon from the data file instead of placeholder */}
-                      {tool?.icon && Si[tool.icon] ? 
-                        React.createElement(Si[tool.icon], { className: "h-4 w-4 text-white" }) :
-                        <img src={`https://picsum.photos/seed/${tool?.name}/40/40`} alt={tool?.name} className="h-4 w-4" />
-                      }
-                  </div>
-                    <span className="text-white text-sm font-medium">{tool?.name}</span>
-                  <button 
-                    className="h-5 w-5 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-slate-300 hover:text-white transition-colors"
-                      onClick={() => handleRemoveTool(tool?.name || "")}
+              {selectedToolsData.map((tool) => {
+                // Use helper function for chip icon
+                const IconComponent = getIconComponent(tool.icon);
+                return (
+                  <div 
+                      key={tool.name} 
+                      className="flex items-center gap-2 bg-indigo-900/40 rounded-full pl-3 pr-2 py-1.5 border border-indigo-500/30"
                   >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
+                    <div className="h-6 w-6 bg-slate-700 rounded-full flex items-center justify-center overflow-hidden">
+                        {/* Render the obtained IconComponent */}
+                        <IconComponent className="h-4 w-4 text-white" />
+                    </div>
+                      <span className="text-white text-sm font-medium">{tool.name}</span>
+                    <button 
+                      className="h-5 w-5 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-slate-300 hover:text-white transition-colors"
+                        onClick={() => handleRemoveTool(tool.name)}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                );
+              })}
               
               {selectedTools.length < 3 && (
                   <Select onValueChange={(value) => handleToolSelection(value)}>
@@ -464,22 +498,23 @@ export default function ToolComparisonPage() {
                   <thead>
                       <tr className="bg-gradient-to-r from-indigo-800 to-purple-800">
                         <th className="px-6 py-5 text-left text-sm md:text-base font-bold text-white border-b border-slate-600">Feature</th>
-                      {selectedToolsData.map((tool) => (
-                          <th key={tool?.name} className="px-6 py-5 text-left text-sm md:text-base font-bold text-white border-b border-slate-600">
+                      {selectedToolsData.map((tool) => {
+                        // Use helper function for table header icon
+                        const IconComponent = getIconComponent(tool.icon);
+                        return (
+                          <th key={tool.name} className="px-6 py-5 text-left text-sm md:text-base font-bold text-white border-b border-slate-600">
                             <div className="flex items-center gap-2">
                               <div className="h-10 w-10 bg-slate-700 rounded-md flex items-center justify-center overflow-hidden border border-indigo-400/30">
-                                {/* Use the actual icon from the data file instead of placeholder */}
-                                {tool?.icon && Si[tool.icon] ? 
-                                  React.createElement(Si[tool.icon], { className: "h-6 w-6 text-white" }) :
-                                  <img src={`https://picsum.photos/seed/${tool?.name}/40/40`} alt={tool?.name} className="h-6 w-6" />
-                                }
+                                {/* Render the obtained IconComponent */}
+                                <IconComponent className="h-6 w-6 text-white" />
                               </div>
-                              <span className="text-white">{tool?.name}</span>
+                              <span className="text-white">{tool.name}</span>
                             </div>
                         </th>
-                      ))}
+                        );
+                       })}
                       {Array(3 - selectedTools.length).fill(0).map((_, i) => (
-                          <th key={i} className="px-6 py-5 text-left text-sm font-semibold text-white border-b border-slate-600"></th>
+                          <th key={`empty-header-${i}`} className="px-6 py-5 text-left text-sm font-semibold text-white border-b border-slate-600"></th>
                       ))}
                     </tr>
                   </thead>
@@ -631,7 +666,7 @@ export default function ToolComparisonPage() {
               </div>
             )}
             
-            {/* Export and Share Buttons - More prominent */}
+            {/* Export and Share Buttons - Use Lucide Icons */}
             <div className="mt-6 flex justify-end items-center gap-4">
               <Button 
                 variant="outline" 
@@ -639,11 +674,7 @@ export default function ToolComparisonPage() {
                 onClick={() => exportComparison('image')}
                 disabled={selectedTools.length === 0}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                  <circle cx="8.5" cy="8.5" r="1.5" />
-                  <polyline points="21 15 16 10 5 21" />
-                </svg>
+                <ImageIcon className="h-5 w-5" />
                 Export as Image
               </Button>
               <Button 
@@ -652,13 +683,7 @@ export default function ToolComparisonPage() {
                 onClick={() => exportComparison('pdf')}
                 disabled={selectedTools.length === 0}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                  <polyline points="14 2 14 8 20 8" />
-                  <line x1="16" y1="13" x2="8" y2="13" />
-                  <line x1="16" y1="17" x2="8" y2="17" />
-                  <polyline points="10 9 9 9 8 9" />
-                </svg>
+                <FileText className="h-5 w-5" />
                 Export as PDF
               </Button>
               <Button 
@@ -666,13 +691,7 @@ export default function ToolComparisonPage() {
                 onClick={shareComparison}
                 disabled={selectedTools.length === 0}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="18" cy="5" r="3" />
-                  <circle cx="6" cy="12" r="3" />
-                  <circle cx="18" cy="19" r="3" />
-                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-                </svg>
+                <Share2 className="h-5 w-5" />
                 Share Comparison
               </Button>
             </div>
@@ -701,7 +720,7 @@ export default function ToolComparisonPage() {
                 <div className="bg-slate-800/50 backdrop-blur-md rounded-xl border border-slate-700/50 p-5">
                   <h4 className="text-lg font-semibold text-white mb-2">Pricing</h4>
                   <p className="text-sm text-slate-300">
-                    Shows the cost structure for each tool, including free tiers, subscription options, and pay-as-you-go models. Helps you evaluate tools based on your budget constraints.
+                    Shows the cost structure for each tool, including free tiers and various pricing models. Helps you evaluate tools based on your budget constraints.
                   </p>
                 </div>
                 
@@ -738,29 +757,19 @@ export default function ToolComparisonPage() {
                 className="p-5 bg-slate-800/50 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer border border-slate-700/50 hover:border-indigo-500/30 block"
               >
                 <div className="flex items-start mb-3">
-                  <div className="w-6 h-6 mr-2 rounded-full bg-[#FF4500] flex items-center justify-center overflow-hidden">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="white" className="w-5 h-5">
-                      <path d="M10.01 7.5A1.5 1.5 0 0 0 8.5 9c0 .828.672 1.5 1.5 1.5.829 0 1.5-.672 1.5-1.5s-.671-1.5-1.5-1.5z"/>
-                      <path d="M17.7 8.2c0-.9-.7-1.7-1.7-1.7-.4 0-.9.2-1.2.5-1.1-.7-2.6-1.2-4.2-1.3L11.4 2c.2 0 .4.1.6.1l2.7.6c.2.4.6.7 1.2.7.7 0 1.3-.6 1.3-1.3S16.6.8 15.9.8c-.5 0-1 .3-1.2.8l-3-.6c-.3-.1-.5 0-.6.3L9.9 5.6c-1.6 0-3.1.5-4.3 1.3-.3-.3-.7-.5-1.2-.5-1 0-1.7.7-1.7 1.7 0 .7.4 1.3 1 1.5v.1c0 2.6 3 4.6 6.8 4.6s6.8-2.1 6.8-4.6v-.1c.6-.2 1-.8 1-.5l-.3-1.5zM4.5 9c0-.8.7-1.5 1.5-1.5.8 0 1.5.7 1.5 1.5s-.7 1.5-1.5 1.5c-.8 0-1.5-.7-1.5-1.5zM12 13c-.8.8-2.3 1-3.5 1-1.3 0-2.7-.2-3.5-1-.2-.2-.2-.4 0-.6.2-.2.4-.2.6 0 .5.5 1.7.7 2.9.7 1.2 0 2.3-.2 2.9-.7.2-.2.4-.2.6 0 .1.2.1.5-.1.6z"/>
-                    </svg>
-            </div>
+                  {SiReddit ? (
+                    <SiReddit className="w-6 h-6 mr-2 text-[#FF4500]" /> 
+                  ) : (
+                    <div className="w-6 h-6 mr-2 rounded-full bg-[#FF4500]"></div> // Fallback shape
+                  )}
                   <span className="text-slate-400 text-sm">Reddit</span>
-          </div>
-                
+                </div>
                 <h3 className="text-xl text-white font-medium mb-2">Cursor vs. Windsurf: Real-World Experience with Large Codebases</h3>
                 <p className="text-slate-400 mb-3">Community discussion comparing features and performance between Windsurf and Cursor</p>
                 <div className="flex items-center justify-between">
                   <div className="flex space-x-2">
-                    <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center overflow-hidden">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" className="w-5 h-5">
-                        <path d="M3.9 19.1L5 21l15-7-15-7 1.1 1.9L16.2 12 3.9 19.1z"/>
-                      </svg>
-            </div>
-                    <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center overflow-hidden border border-gray-600">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" className="w-5 h-5">
-                        <path d="M20.5 22H4c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2h3V4c0-1.1.9-2 2-2h6.5c1.1 0 2 .9 2 2v2h3c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2zM9.5 4v2h6V4h-6zm8 5h-10v.5c0 .83-.67 1.5-1.5 1.5s-1.5-.67-1.5-1.5V9H4v11h16.5V9h-3zm-9.5 7c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5-1.5zm4 0c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5-1.5zm4 0c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5-1.5z"/>
-                      </svg>
-                    </div>
+                    <div className="w-8 h-8 rounded-full bg-blue-600"></div>
+                    <div className="w-8 h-8 rounded-full bg-gray-800 border border-gray-600"></div>
                   </div>
                   <span className="text-sm text-slate-500">96 votes • 86 comments</span>
                 </div>
@@ -774,47 +783,39 @@ export default function ToolComparisonPage() {
                 className="p-5 bg-slate-800/50 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer border border-slate-700/50 hover:border-indigo-500/30 block"
               >
                 <div className="flex items-start mb-3">
-                  <div className="w-6 h-6 mr-2 rounded-full bg-black flex items-center justify-center overflow-hidden">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" className="w-3.5 h-3.5">
-                      <path d="M13.8 10.5L20.7 2h-3.1l-5.4 6.7L7.5 2H2l7.2 10.1L2 22h3.1l5.8-7.2L16 22h5.5l-7.7-11.5zm-2.4 3l-.7-1L4.6 3.7h2.5l4.9 7 .7 1 6.4 9.1h-2.5l-5.2-7.3z"/>
-                    </svg>
-              </div>
+                  {SiX ? (
+                     <SiX className="w-6 h-6 mr-2 text-white" />
+                  ) : (
+                     <div className="w-6 h-6 mr-2 rounded-full bg-black"></div> // Fallback shape
+                  )}
                   <span className="text-slate-400 text-sm">X (Twitter)</span>
-            </div>
-            
+                </div>
                 <h3 className="text-xl text-white font-medium mb-2">Best AI Coding tool</h3>
                 <p className="text-slate-400 mb-3">Have you ever vibe coded 6 versions of same app at the same time using all of the best AI coding tools.</p>
                 <div className="flex items-center justify-between">
                   <div className="flex space-x-2">
-                    <div className="w-8 h-8 rounded-full bg-gray-900 flex items-center justify-center overflow-hidden border border-gray-700">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" className="w-5 h-5">
-                        <path d="M12 1.27a11 11 0 00-3.48 21.46c.55.09.73-.24.73-.53v-1.86c-3.03.66-3.67-1.45-3.67-1.45-.5-1.29-1.21-1.63-1.21-1.63-.99-.68.07-.67.07-.67 1.09.08 1.67 1.12 1.67 1.12.98 1.68 2.56 1.19 3.18.91.1-.7.38-1.19.69-1.46-2.42-.27-4.96-1.21-4.96-5.4 0-1.19.42-2.17 1.12-2.93-.11-.28-.49-1.39.11-2.89 0 0 .93-.3 3.03 1.13a10.5 10.5 0 015.54 0c2.1-1.43 3.03-1.13 3.03-1.13.6 1.5.22 2.61.11 2.89.7.76 1.12 1.74 1.12 2.93 0 4.2-2.56 5.13-4.99 5.4.39.34.73 1 .73 2.02v2.99c0 .29.19.63.74.53A11 11 0 0012 1.27"/>
-                      </svg>
-              </div>
-                    <div className="w-8 h-8 rounded-full bg-purple-800 flex items-center justify-center overflow-hidden">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" className="w-5 h-5">
-                        <path d="M12 2L2 7l10 5 8.5-4.25v6.5C18.5 17.75 15.75 20 12 20s-6.5-2.25-6.5-5.75V10H3v4.25C3 19 7 22 12 22s9-3 9-7.75V7l-9-5z"/>
-                      </svg>
-            </div>
-            </div>
+                    <div className="w-8 h-8 rounded-full bg-gray-900 border border-gray-700 flex items-center justify-center"><SiGithub className="w-5 h-5 text-white"/></div>
+                    <div className="w-8 h-8 rounded-full bg-purple-800"></div>
+                  </div>
                   <span className="text-sm text-slate-500">800 likes • 102 replies</span>
                 </div>
               </a>
               
               {/* Hacker News Comparison Card - Replace href with your link */}
               <a 
-                href="REPLACE_WITH_HACKERNEWS_LINK" 
+                href="#" // Replace with actual link
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="p-5 bg-slate-800/50 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer border border-slate-700/50 hover:border-indigo-500/30 block"
               >
                 <div className="flex items-start mb-3">
-                  <div className="w-6 h-6 mr-2 bg-[#ff6600] flex items-center justify-center">
-                    <span className="text-white font-bold text-xs">Y</span>
-                    </div>
+                  {SiYcombinator ? (
+                    <SiYcombinator className="w-6 h-6 mr-2 text-[#ff6600]" />
+                  ) : (
+                    <div className="w-6 h-6 mr-2 bg-[#ff6600]"></div> // Fallback shape
+                  )}
                   <span className="text-slate-400 text-sm">Hacker News</span>
-                  </div>
-                  
+                </div>
                 <h3 className="text-xl text-white font-medium mb-2">Free vs Paid AI Tools: Worth the Investment?</h3>
                 <p className="text-slate-400 mb-3">Tech community debate on free vs. premium AI coding assistants</p>
                 <div className="flex items-center justify-between">
@@ -825,7 +826,7 @@ export default function ToolComparisonPage() {
                   <span className="text-sm text-slate-500">142 points • 96 comments</span>
                 </div>
               </a>
-                  </div>
+            </div>
                   
             <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* YouTube Comparison Card - Replace href with your link */}
@@ -836,33 +837,20 @@ export default function ToolComparisonPage() {
                 className="p-5 bg-slate-800/50 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer border border-slate-700/50 hover:border-indigo-500/30 block"
               >
                 <div className="flex items-start mb-3">
-                  <div className="w-6 h-6 mr-2 bg-red-600 rounded-md flex items-center justify-center overflow-hidden">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" className="w-3.5 h-3.5">
-                      <path d="M10 15l5.19-3L10 9v6m11.56-7.83c.13.47.22 1.1.28 1.9.07.8.1 1.49.1 2.09L22 12c0 2.19-.16 3.8-.44 4.83-.25.9-.83 1.48-1.73 1.73-.47.13-1.33.22-2.65.28-1.3.07-2.49.1-3.59.1L12 19c-4.19 0-6.8-.16-7.83-.44-.9-.25-1.48-.83-1.73-1.73-.13-.47-.22-1.1-.28-1.9-.07-.8-.1-1.49-.1-2.09L2 12c0-2.19.16-3.8.44-4.83.25-.9.83-1.48 1.73-1.73.47-.13 1.33-.22 2.65-.28 1.3-.07 2.49-.1 3.59-.1L12 5c4.19 0 6.8.16 7.83.44.9.25 1.48.83 1.73 1.73z"/>
-                    </svg>
-                  </div>
+                  {SiYoutube ? (
+                    <SiYoutube className="w-6 h-6 mr-2 text-red-600" />
+                  ) : (
+                    <div className="w-6 h-6 mr-2 rounded-md bg-red-600"></div> // Fallback shape
+                  )}
                   <span className="text-slate-400 text-sm">YouTube</span>
-            </div>
-                
+                </div>
                 <h3 className="text-xl text-white font-medium mb-2">Claude 3.7 VS Grok 3 VS ChatGPT vs DeepSeek: Who Wins?</h3>
                 <p className="text-slate-400 mb-3">In-depth compareison of the performance of four leading AI models: Claude 3.7, Grok, ChatGPT, and Deep Seek</p>
-            <div className="flex items-center justify-between">
-              <div className="flex space-x-2">
-                    <div className="w-8 h-8 rounded-full bg-teal-600 flex items-center justify-center overflow-hidden">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="white" className="w-5 h-5">
-                        <path d="M74.6 256c0-38.3 31.1-69.4 69.4-69.4h88V144h-88c-61.9 0-112 50.1-112 112s50.1 112 112 112h88v-42.6h-88c-38.3 0-69.4-31.1-69.4-69.4zm85.4 22h192v-44H160v44zm208-134h-88v42.6h88c38.3 0 69.4 31.1 69.4 69.4s-31.1 69.4-69.4 69.4h-88V368h88c61.9 0 112-50.1 112-112s-50.1-112-112-112z"/>
-                      </svg>
-              </div>
-                    <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center overflow-hidden">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" className="w-5 h-5">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
-                      </svg>
-            </div>
-                    <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center overflow-hidden">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" className="w-5 h-5">
-                        <path d="M12 3c5.1 0 8 3.9 8 7 0 3-1.6 5-4 6-.4.1-.9.3-1 .9-.1.5-.9.9-.9.9-.6 0-.2-1.2-.3-1.5-.1-.3-.4-.5-.8-.7-3.2-.8-6-2.7-6-5.6 0-3.1 2.9-7 5-7zm.5 2c-1.7 0-3 2.1-3 5 0 2.3.8 3.6 2 3.6 1.6 0 3-1.9 3-4.6 0-2.7-1-4-2-4z"/>
-                      </svg>
-          </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex space-x-2">
+                    {SiClaude && <div className="w-8 h-8 rounded-full bg-teal-600 flex items-center justify-center"><SiClaude className="w-5 h-5 text-white"/></div>}
+                    <div className="w-8 h-8 rounded-full bg-purple-600"></div>
+                    {SiOpenai && <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center"><SiOpenai className="w-5 h-5 text-white"/></div>}
                   </div>
                   <span className="text-sm text-slate-500">18K views</span>
                 </div>
@@ -876,36 +864,20 @@ export default function ToolComparisonPage() {
                 className="p-5 bg-slate-800/50 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer border border-slate-700/50 hover:border-indigo-500/30 block"
               >
                 <div className="flex items-start mb-3">
-                  <div className="w-6 h-6 mr-2 bg-white rounded-full flex items-center justify-center overflow-hidden">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="#da552f" className="w-4 h-4">
-                      <path d="M23.5,15.5h-5v9h5C26.5,24.5,26.5,15.5,23.5,15.5z M21,21.5h-0.5v-3H21c0.8,0,0.8,3,0,3z"/>
-                      <path d="M20,0.5C9.2,0.5,0.5,9.2,0.5,20c0,10.8,8.8,19.5,19.5,19.5S39.5,30.8,39.5,20C39.5,9.2,30.8,0.5,20,0.5z M28,24.5h-2.5v3h-2.5v-3h-5c-2.4,0-4.5-1-4.5-5c0-3.2,1.4-5,4.5-5h5v-3h2.5v3H28V24.5z"/>
-                    </svg>
-                  </div>
+                  {SiProducthunt ? (
+                    <SiProducthunt className="w-6 h-6 mr-2 text-[#da552f]" />
+                  ) : (
+                    <div className="w-6 h-6 mr-2 rounded-full bg-[#da552f]"></div> // Fallback shape
+                  )}
                   <span className="text-slate-400 text-sm">Product Hunt</span>
                 </div>
-                
                 <h3 className="text-xl text-white font-medium mb-2">Midjourney vs DALL-E vs Stable Diffusion</h3>
                 <p className="text-slate-400 mb-3">Comparing popular AI image generation tools</p>
-            <div className="flex items-center justify-between">
-              <div className="flex space-x-2">
-                    <div className="w-8 h-8 rounded-full bg-indigo-900 flex items-center justify-center overflow-hidden">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" className="w-5 h-5">
-                        <path d="M6.5 12.5L10 15l4.5-6 3.5 4.5v1c0 .55-.45 1-1 1H6c-.55 0-1-.45-1-1-1v-1l1.5-2zm6-1c.83 0 1.5-.67 1.5-1.5S13.33 8.5 12.5 8.5 11 9.17 11 10s.67 1.5 1.5 1.5z"/>
-                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 16H6c-.55 0-1-.45-1-1-1V6c0-.55.45-1 1-1h12c.55 0 1 .45 1 1v12c0 .55-.45 1-1 1z"/>
-                      </svg>
-              </div>
-                    <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center overflow-hidden">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" className="w-5 h-5">
-                        <path d="M9,6 L9,6 C7.34,6 6,7.34 6,9 L6,15 C6,16.66 7.34,18 9,18 L15,18 C16.66,18 18,16.66 18,15 L18,9 C18,7.34 16.66,6 15,6 L9,6 Z M13,16 L11,16 L11,14 L9,14 L9,12 L11,12 L11,10 L13,10 L13,12 L15,12 L15,14 L13,14 L13,16 Z"/>
-                      </svg>
-            </div>
-                    <div className="w-8 h-8 rounded-full bg-cyan-600 flex items-center justify-center overflow-hidden">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" className="w-5 h-5">
-                        <path d="M18 12c0-3.31-2.69-6-6-6s-6 2.69-6 6 2.69 6 6 6 6-2.69 6-6zm-12 0c0-3.31 2.69-6 6-6s6 2.69 6 6-2.69 6-6 6-6z"/>
-                        <path d="M12 8c2.21 0 4 1.79 4 4s-1.79 4-4 4-4-1.79-4-4 1.79-4 4-4z"/>
-                      </svg>
-          </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex space-x-2">
+                    {SiMidjourney && <div className="w-8 h-8 rounded-full bg-indigo-900 flex items-center justify-center"><SiMidjourney className="w-5 h-5 text-white"/></div>}
+                    {SiDalle && <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center"><SiDalle className="w-5 h-5 text-white"/></div>}
+                    <div className="w-8 h-8 rounded-full bg-cyan-600"></div> 
                   </div>
                   <span className="text-sm text-slate-500">856 upvotes</span>
                 </div>
@@ -948,7 +920,7 @@ export default function ToolComparisonPage() {
         </div>
       </section>
 
-      <style jsx="true" global="true">{`
+      <style>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
           to { opacity: 1; transform: translateY(0); }
@@ -961,4 +933,4 @@ export default function ToolComparisonPage() {
       `}</style>
     </div>
   );
-} 
+}  

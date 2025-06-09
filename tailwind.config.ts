@@ -121,10 +121,44 @@ export default {
             height: "0",
           },
         },
+        "float-slow": {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-10px)" }
+        },
+        "float-medium": {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-15px)" }
+        },
+        "float-fast": {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-20px)" }
+        },
+        "gradient-xy": {
+          "0%, 100%": {
+            "background-position": "0% 0%",
+            "opacity": "0.5"
+          },
+          "25%": {
+            "background-position": "100% 0%",
+            "opacity": "0.8"
+          },
+          "50%": {
+            "background-position": "100% 100%",
+            "opacity": "1"
+          },
+          "75%": {
+            "background-position": "0% 100%",
+            "opacity": "0.8"
+          }
+        }
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "float-slow": "float-slow 5s ease-in-out infinite",
+        "float-medium": "float-medium 4s ease-in-out infinite",
+        "float-fast": "float-fast 3s ease-in-out infinite",
+        "gradient-xy": "gradient-xy 10s ease infinite"
       },
     },
   },

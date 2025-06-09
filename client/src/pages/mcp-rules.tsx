@@ -31,7 +31,7 @@ export const mcpServers = [
   {
     id: "resend",
     name: "Resend",
-    logo: "https://pbs.twimg.com/profile_images/1749861436074151936/MPN32ysD_400x400.jpg",
+    logo: "https://resend.com/_next/image?url=%2Fstatic%2Fbrand%2Fresend-header.png&w=384&q=100",
     description: "Send emails using Resend's API directly from Cursor or Claude Desktop without copy-pasting. Create and send professional emails with AI assistance.",
     githubUrl: "https://github.com/resendlabs/resend-node",
     websiteUrl: "https://resend.com"
@@ -60,14 +60,7 @@ export const mcpServers = [
     githubUrl: "https://github.com/vercel/vercel",
     websiteUrl: "https://vercel.com"
   },
-  {
-    id: "stripe",
-    name: "Stripe",
-    logo: "https://cdn.brandfetch.io/idxAg10C0L/theme/light/logo.svg",
-    description: "Interact with the Stripe API to manage payments, subscriptions, and other financial operations. Process payments and manage customer subscriptions with AI assistance.",
-    githubUrl: "https://github.com/stripe/stripe-node",
-    websiteUrl: "https://stripe.com"
-  },
+
   {
     id: "figma",
     name: "Figma",
@@ -182,14 +175,7 @@ export const mcpServers = [
     githubUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/google-maps",
     websiteUrl: "https://maps.google.com/"
   },
-  {
-    id: "lemon-squeezy",
-    name: "Lemon Squeezy",
-    logo: "https://cdn-icons-png.flaticon.com/512/7475/7475811.png",
-    description: "Access e-commerce, subscription, and customer data from your Lemon Squeezy store. Manage products, subscriptions, and orders.",
-    githubUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/lemon-squeezy",
-    websiteUrl: "https://lemonsqueezy.com/"
-  },
+
   {
     id: "slack",
     name: "Slack",
@@ -296,14 +282,7 @@ export const mcpServers = [
     websiteUrl: "https://apify.com/apify/rag-web-browser"
   },
   // New servers from GitHub repository
-  {
-    id: "polar",
-    name: "Polar",
-    logo: "https://cdn-icons-png.flaticon.com/512/1453/1453241.png",
-    description: "Access your Polar subscriptions, customers, products and orders data. Manage your Polar SaaS monetization with AI assistance.",
-    githubUrl: "https://github.com/teampolaris/mcp-server-polar",
-    websiteUrl: "https://polar.sh"
-  },
+
   {
     id: "posthog",
     name: "PostHog",
@@ -496,18 +475,32 @@ export default function MCPRulesPage() {
                 transition={{ duration: 0.6, delay: 0.2 }}
                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8"
               >
+                {/* Iterate over mcpServers */}
                 {mcpServers.map((server) => (
-                  <a 
+                  <motion.div 
                     key={server.id}
-                    href={`/mcp/${server.id}`}
                     className="bg-slate-800/50 backdrop-blur-md rounded-xl border border-slate-700/50 overflow-hidden hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/5 transition-all p-5 flex flex-col"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
                   >
+                    {/* Card Header */}
                     <div className="flex items-center gap-4 mb-5">
                       <div className="h-12 w-12 bg-slate-700/70 rounded-md flex items-center justify-center overflow-hidden">
                         <img src={server.logo} alt={server.name} className="h-8 w-8 object-contain" />
                       </div>
                       <div className="flex flex-col">
-                        <h3 className="text-lg font-semibold bg-clip-text text-transparent bg-gradient-to-r from-white to-indigo-200">{server.name}</h3>
+                        {/* Make only the name a link */}
+                        <h3 className="text-lg font-semibold">
+                           <a 
+                             href={server.websiteUrl} 
+                             target="_blank" 
+                             rel="noopener noreferrer"
+                             className="bg-clip-text text-transparent bg-gradient-to-r from-white to-indigo-200 hover:text-indigo-300 transition-colors"
+                           >
+                             {server.name}
+                           </a>
+                         </h3>
                         {server.githubUrl && (
                           <Badge className={server.githubUrl.includes("modelcontextprotocol/servers") ? 
                             "bg-indigo-600/70 text-indigo-100 text-[10px] font-normal" : 
@@ -518,8 +511,10 @@ export default function MCPRulesPage() {
                       </div>
                     </div>
                     
+                    {/* Card Body */}
                     <p className="text-slate-300 text-sm mb-auto line-clamp-3">{server.description}</p>
                     
+                    {/* Card Footer Links */}
                     <div className="flex items-center gap-3 mt-5">
                       {server.githubUrl && (
                         <a 
@@ -527,7 +522,6 @@ export default function MCPRulesPage() {
                           target="_blank" 
                           rel="noopener noreferrer"
                           className="text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 py-1 px-2 rounded-md flex items-center gap-1 transition-colors"
-                          onClick={(e) => e.stopPropagation()}
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
@@ -537,28 +531,30 @@ export default function MCPRulesPage() {
                       )}
                       
                       {server.websiteUrl && (
-                        <a 
-                          href={server.websiteUrl} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 py-1 px-2 rounded-md flex items-center gap-1 transition-colors"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <line x1="2" y1="12" x2="22" y2="12"></line>
-                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                          </svg>
-                          Website
-                        </a>
-                      )}
+                         <a 
+                           href={server.websiteUrl} 
+                           target="_blank" 
+                           rel="noopener noreferrer"
+                           className="text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 py-1 px-2 rounded-md flex items-center gap-1 transition-colors"
+                         >
+                           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                             <circle cx="12" cy="12" r="10"></circle>
+                             <line x1="2" y1="12" x2="22" y2="12"></line>
+                             <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                           </svg>
+                           Website
+                         </a>
+                       )}
                     </div>
                     
-                    <div className="flex items-center text-indigo-400 text-sm font-medium mt-4">
-                      <span>View Installation Guide</span>
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </div>
-                  </a>
+                    {/* Link to detail page */}
+                    <a href={`/mcp/${server.id}`} className="block">
+                      <div className="flex items-center text-indigo-400 text-sm font-medium mt-4 hover:text-indigo-300 transition-colors">
+                        <span>View Installation Guide</span>
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </div>
+                    </a>
+                  </motion.div>
                 ))}
                 
                 <div className="bg-slate-800/30 backdrop-blur-md rounded-xl border border-dashed border-slate-700/50 overflow-hidden hover:border-indigo-500/50 transition-all p-6 flex flex-col items-center justify-center text-center">
@@ -572,9 +568,11 @@ export default function MCPRulesPage() {
                     Setup your own custom MCP server integration
                   </p>
                   
-                  <Button variant="outline" className="bg-slate-800/50 border-slate-700 text-white hover:bg-slate-700">
-                    Add Server
-                  </Button>
+                  <a href="https://github.com/rohitg00/CreateMVP?tab=readme-ov-file#mcp-server-template" target="_blank" rel="noopener noreferrer">
+                    <Button variant="outline" className="border-indigo-500/50 text-indigo-300 hover:bg-indigo-900/30 hover:text-indigo-200">
+                      Add Server
+                    </Button>
+                  </a>
                 </div>
               </motion.div>
               
@@ -1041,12 +1039,12 @@ export default function MCPRulesPage() {
             </a>
           </div>
           
-          <div className="mt-12 text-center">
+          {/* <div className="mt-12 text-center">
             <Button variant="outline" className="bg-slate-800/50 border-slate-700 text-white px-6 py-3 h-auto hover:bg-slate-700 gap-2">
               View More MCP Registries
               <ArrowRight className="h-4 w-4" />
             </Button>
-          </div>
+          </div> */}
         </div>
       </section>
       
@@ -1108,9 +1106,11 @@ export default function MCPRulesPage() {
                   </li>
                 </ul>
                 
-                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white w-full h-12 text-base font-medium" onClick={() => setActiveTab("mcp-servers")}>
-                  Browse MCP Servers
-                </Button>
+                <a href="https://github.com/rohitg00/CreateMVP?tab=readme-ov-file#mcp-server-template" target="_blank" rel="noopener noreferrer">
+                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white w-full h-12 text-base font-medium">
+                    Add Custom MCP
+                  </Button>
+                </a>
               </motion.div>
               
               <motion.div
@@ -1146,9 +1146,11 @@ export default function MCPRulesPage() {
                   </li>
                 </ul>
                 
-                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white w-full h-12 text-base font-medium" onClick={() => setActiveTab("cursor-rules")}>
-                  Explore Cursor Rules
-                </Button>
+                <a href="https://github.com/rohitg00/CreateMVP#creating-custom-cursor-rules" target="_blank" rel="noopener noreferrer">
+                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white w-full h-12 text-base font-medium">
+                    Create Custom Rule
+                  </Button>
+                </a>
               </motion.div>
               
               <motion.div
@@ -1294,4 +1296,4 @@ export default function MCPRulesPage() {
       `}</style>
     </div>
   );
-} 
+}  

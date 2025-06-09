@@ -53,9 +53,8 @@ export default function LemonSqueezyMCPPage() {
   );
 
   const features = [
-    "Retrieve product and subscription data from your Lemon Squeezy store",
+    "Retrieve product data from your Lemon Squeezy store",
     "Get customer information and purchase history",
-    "Check subscription status and metrics",
     "Access orders and invoice data",
     "Monitor sales and revenue analytics"
   ];
@@ -64,7 +63,7 @@ export default function LemonSqueezyMCPPage() {
     <MCPTemplate
       id="lemonsqueezy"
       name="Lemon Squeezy"
-      description="Access e-commerce, subscription, and customer data from your Lemon Squeezy store"
+      description="Access e-commerce and customer data from your Lemon Squeezy store"
       logo="https://cdn.brandfetch.io/JIjH6gq9hf/theme/light/logo.svg"
       dockerConfig={dockerConfig}
       npxConfig={npxConfig}
@@ -73,4 +72,4 @@ export default function LemonSqueezyMCPPage() {
       features={features}
     />
   );
-} 
+}  

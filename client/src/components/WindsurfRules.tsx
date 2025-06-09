@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, ArrowDown, Filter, Grid3X3, Grid2X2, Search, X } from "lucide-react";
+import { ArrowRight, ArrowDown, Filter, Grid3X3, Grid2X2, Search, X, Plus } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -505,6 +505,23 @@ export default function WindsurfRules({ rules: propRules }: WindsurfRulesProps) 
               </Link>
             </motion.div>
           ))}
+
+          {/* Add Custom Windsurf Rule Card */}
+          <motion.div
+            className="bg-slate-900/50 border-2 border-dashed border-slate-700 rounded-2xl p-8 flex flex-col items-center justify-center text-center hover:border-purple-500/50 transition-all duration-300"
+          >
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center mb-4 border border-purple-500/20">
+              <Plus className="w-8 h-8 text-purple-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-white mb-2">Add Custom Windsurf Rule</h3>
+            <p className="text-sm text-slate-400 mb-4">Create your own custom Windsurf rule for AI Flow</p>
+            <Button 
+              className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"
+              onClick={() => window.open('https://github.com/rohitg00/CreateMVP?tab=readme-ov-file#mcp-server-template', '_blank')}
+            >
+              Add Rule
+            </Button>
+          </motion.div>
         </div>
       )}
       

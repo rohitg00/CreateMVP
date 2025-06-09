@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, ArrowDown, Filter, Grid3X3, Grid2X2, Search, X } from "lucide-react";
+import { ArrowRight, ArrowDown, Filter, Grid3X3, Grid2X2, Search, X, Plus } from "lucide-react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -327,7 +327,12 @@ export default function CursorRules({ rules: propRules }: CursorRulesProps) {
             </div>
             <h3 className="text-lg font-semibold text-gray-100 mb-2">Create Custom Rule</h3>
             <p className="text-gray-300 text-sm mb-4">Create your own custom rule for specialized workflows</p>
-            <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">Create Rule</Button>
+            <Button 
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+              onClick={() => window.open('https://github.com/rohitg00/CreateMVP?tab=readme-ov-file#mcp-server-template', '_blank')}
+            >
+              Create Rule
+            </Button>
           </Card>
         </motion.div>
       </div>

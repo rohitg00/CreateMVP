@@ -57,11 +57,11 @@ export default function StripeMCPPage() {
   );
 
   const features = [
-    "Process payments and handle transactions",
-    "Manage customers and payment methods",
-    "Create and manage subscriptions",
-    "Handle invoices and billing",
-    "Access detailed payment analytics",
+    "Process transactions",
+    "Manage customers and methods",
+    "Create and manage services",
+    "Handle invoices and records",
+    "Access detailed analytics",
     "Process refunds and handle disputes"
   ];
 
@@ -69,7 +69,7 @@ export default function StripeMCPPage() {
     <MCPTemplate
       id="stripe"
       name="Stripe"
-      description="Interact with the Stripe API for payment processing and subscription management"
+      description="Interact with the Stripe API for transaction processing and service management"
       logo="https://cdn.brandfetch.io/idxAg10C0L/theme/light/logo.svg"
       dockerConfig={dockerConfig}
       npxConfig={npxConfig}
@@ -78,4 +78,4 @@ export default function StripeMCPPage() {
       features={features}
     />
   );
-} 
+}  

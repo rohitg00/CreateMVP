@@ -10,6 +10,33 @@ A full-stack AI application for generating project prototypes and implementation
 ## Our latest featured Demo
 [![Our latest conference talk](https://img.youtube.com/vi/A7OV2rOIp2Y/0.jpg)](https://www.youtube.com/watch?v=A7OV2rOIp2Y)
 
+## CreateMVP - Self-Hosted Open Source Version
+
+A simplified, self-hosted version of CreateMVP that generates comprehensive MVP implementation plans using multiple LLM providers.
+
+## Features
+
+- Multi-model AI integration (OpenAI, Anthropic, Google, etc.)
+- Project requirements analysis
+- Automatic generation of implementation docs:
+  - Requirements documents
+  - PRDs
+  - Tech stack recommendations
+  - Frontend and backend implementation guides
+  - System flow documentation
+  - Project status templates
+- PDF upload for extracting requirements
+- API key management for multiple AI providers
+
+## Self-Hosted Features
+
+- **Unlimited MVP Generation**: No credit limits or payment requirements
+- **Multiple LLM Providers**: Support for OpenAI, Anthropic, Google, DeepSeek, and more
+- **Local SQLite Database**: All data stored locally for privacy
+- **Simple Authentication**: Basic username/password authentication
+- **Export Options**: Download generated plans in multiple formats
+- **Self-Hosted**: Run entirely on your own infrastructure
+
 ## What the Platform Delivers
 
 - **AI Plan Generator** – Using latest Gemini 2.5 Pro model which ranks `#1` on [LMarena](https://lmarena.ai/), Accepts a short requirements brief or a PDF; outputs a complete implementation bundle (technical spec, architecture, user‑flow diagram links, task breakdown, and a polished PRD).
@@ -27,117 +54,260 @@ A full-stack AI application for generating project prototypes and implementation
 - 🧠 **Premium AI Chat**: Better conversations and insights with top AI models built-in.
 - 🚀 **Enhanced UI**: A smoother, faster planning experience.
 
-## Features
-
-- Multi-model AI integration (OpenAI, Anthropic, Google, etc.)
-- Project requirements analysis
-- Automatic generation of implementation docs:
-  - Requirements documents
-  - PRDs
-  - Tech stack recommendations
-  - Frontend and backend implementation guides
-  - System flow documentation
-  - Project status templates
-- PDF upload for extracting requirements
-- API key management for multiple AI providers
-
-## Tech Stack
-
-- **Frontend**: React, TypeScript, Tailwind CSS, Shadcn UI
-- **Backend**: Express.js, TypeScript
-- **Database**: PostgreSQL with Drizzle ORM
-- **AI Integration**: OpenAI, Anthropic, Google, and more
-
-## Getting Started
+## Quick Start
 
 ### Prerequisites
 
-- Node.js (v20+)
-- PostgreSQL database
+- Node.js 18+ and npm/pnpm/yarn
+- Git
 
 ### Installation
 
-1. Clone the repository:
+1. **Clone the repository**
    ```bash
    git clone https://github.com/rohitg00/createmvp.git
    cd createmvp
    ```
 
-2. Install dependencies:
+2. **Install dependencies**
    ```bash
    npm install
-   npm install dotenv && npm install --save-dev @types/dotenv
+   # or
+   pnpm install
+   # or
+   yarn install
    ```
 
-3. Create a `.env` file in the root directory with the following variables:
-   ```
-   # Database
-   DATABASE_URL=postgresql://username:password@localhost:5432/your_database
-   
-   # Environment (development, production)
-   NODE_ENV=development
-   
-   # Port (optional, defaults to 5000)
-   PORT=5000
-   
-   # AI API Keys (add any you want to use)
-   OPENAI_API_KEY=your_openai_api_key
-   ANTHROPIC_API_KEY=your_anthropic_api_key
-   GOOGLE_API_KEY=your_google_api_key
-   # Add other API keys as needed
-   ```
-
-4. Make sure the following files exist:
-   - `shared/schema.ts`: Contains database table definitions
-   - `drizzle.config.ts`: Updated to import dotenv
-   - `server/index.ts`: Updated to import dotenv
-   - `client/src/main.tsx`: Includes QueryClientProvider and UserProvider
-
-5. Set up the database:
+3. **Set up environment variables**
    ```bash
-   npm run db:push
+   cp .env.example .env
+   ```
+   
+   Edit `.env` and add your LLM provider API keys:
+   ```env
+   # Database (SQLite)
+   DATABASE_PATH="./data/app.db"
+   
+   # Session Secret (generate a secure random string)
+   SESSION_SECRET="your-secure-session-secret-here"
+   
+   # LLM Provider API Keys (add the ones you want to use)
+   OPENAI_API_KEY="your-openai-api-key"
+   ANTHROPIC_API_KEY="your-anthropic-api-key"
+   GOOGLE_API_KEY="your-google-api-key"
+   DEEPSEEK_API_KEY="your-deepseek-api-key"
+   
+   # Email (optional, for notifications)
+   RESEND_API_KEY="your-resend-api-key"
+   EMAIL_FROM="CreateMVP <noreply@yourdomain.com>"
    ```
 
-6. Start the development server:
+4. **Initialize the database**
+   ```bash
+   npm run db:generate
+   npm run db:migrate
+   ```
+
+5. **Start the development server**
    ```bash
    npm run dev
    ```
 
-7. Open [http://localhost:5000](http://localhost:5000) in your browser.
+6. **Access the application**
+   Open your browser and navigate to `http://localhost:3000`
+
+## LLM Provider Setup
+
+### OpenAI
+1. Get your API key from [OpenAI Platform](https://platform.openai.com/api-keys)
+2. Add to `.env`: `OPENAI_API_KEY="sk-..."`
+
+### Anthropic (Claude)
+1. Get your API key from [Anthropic Console](https://console.anthropic.com/)
+2. Add to `.env`: `ANTHROPIC_API_KEY="sk-ant-..."`
+
+### Google (Gemini)
+1. Get your API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. Add to `.env`: `GOOGLE_API_KEY="AIza..."`
+
+### DeepSeek
+1. Get your API key from [DeepSeek Platform](https://platform.deepseek.com/)
+2. Add to `.env`: `DEEPSEEK_API_KEY="sk-..."`
+
+## Database Management
+
+The application uses SQLite for local data storage. Database files are stored in the `./data/` directory.
+
+### Database Commands
+
+```bash
+# Generate database schema
+npm run db:generate
+
+# Run migrations
+npm run db:migrate
+
+# View database (optional)
+npm run db:studio
+```
+
+### Backup Your Data
+
+To backup your data, simply copy the `./data/` directory:
+
+```bash
+cp -r ./data/ ./backup-$(date +%Y%m%d)/
+```
 
 ## Production Deployment
 
-1. Build the application:
+### Using Docker
+
+1. **Build the Docker image**
+   ```bash
+   docker build -t createmvp .
+   ```
+
+2. **Run the container**
+   ```bash
+   docker run -d \
+     --name createmvp \
+     -p 3000:3000 \
+     -v $(pwd)/data:/app/data \
+     -v $(pwd)/.env:/app/.env \
+     createmvp
+   ```
+
+### Manual Deployment
+
+1. **Build the application**
    ```bash
    npm run build
    ```
 
-2. Start the production server:
+2. **Start the production server**
    ```bash
-   npm run start
+   npm start
    ```
 
-## Setting Up Supabase (Alternative Database Option)
+### Environment Variables for Production
 
-This project can use Supabase as an alternative to a local PostgreSQL database:
+```env
+NODE_ENV=production
+PORT=3000
+DATABASE_PATH="./data/app.db"
+SESSION_SECRET="your-very-secure-session-secret"
+# ... other API keys
+```
 
-1. Create a Supabase account at [supabase.com](https://supabase.com)
-2. Create a new project
-3. Get your connection string from the project settings
-4. Update your `.env` file:
-   ```
-   DATABASE_URL=your_supabase_connection_string
-   ```
+## Usage
 
-## API Key Management
+1. **Create an Account**: Register with a username and password
+2. **Configure API Keys**: Add your LLM provider API keys in the settings
+3. **Generate MVP Plans**: Describe your project idea and get comprehensive implementation plans
+4. **Export Results**: Download your generated plans in various formats
 
-The application supports multiple AI providers. To use them, add your API keys to the `.env` file as shown above.
+## API Endpoints
 
-## Database Schema
+### Authentication
+- `POST /api/auth/register` - Register a new user
+- `POST /api/auth/login` - Login user
+- `POST /api/auth/logout` - Logout user
 
-The application uses the following tables:
-- `api_keys`: Storage for AI provider API keys
-- `chat_messages`: History of chat interactions
+### MVP Generation
+- `POST /api/generate-plan` - Generate a new MVP plan
+- `GET /api/plans` - Get user's generated plans
+
+### API Keys
+- `GET /api/api-keys` - Get user's API keys
+- `POST /api/api-keys` - Add/update API key
+- `DELETE /api/api-keys/:id` - Delete API key
+
+## Development
+
+### Project Structure
+
+```
+createmvp/
+├── client/                 # Frontend React application
+│   ├── src/
+│   │   ├── components/     # React components
+│   │   ├── pages/         # Page components
+│   │   └── lib/           # Utilities and hooks
+├── server/                # Backend Express application
+│   ├── routes.ts          # API routes
+│   ├── auth.ts           # Authentication logic
+│   ├── storage.ts        # Database operations
+│   └── db.ts             # Database configuration
+├── shared/               # Shared types and schemas
+│   └── schema.ts         # Database schema
+└── migrations/           # Database migrations
+```
+
+### Available Scripts
+
+```bash
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run start        # Start production server
+npm run db:generate  # Generate database schema
+npm run db:migrate   # Run database migrations
+npm run db:studio    # Open database studio
+npm run lint         # Run linter
+npm run type-check   # Run TypeScript type checking
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Database connection errors**
+   - Ensure the `./data/` directory exists and is writable
+   - Check that `DATABASE_PATH` in `.env` is correct
+
+2. **LLM API errors**
+   - Verify your API keys are correct and have sufficient credits
+   - Check that the API keys have the necessary permissions
+
+3. **Port already in use**
+   - Change the `PORT` environment variable to use a different port
+   - Kill any existing processes using the port
+
+### Logs
+
+Application logs are written to the console. In production, consider using a process manager like PM2 to manage logs:
+
+```bash
+npm install -g pm2
+pm2 start npm --name "createmvp" -- start
+pm2 logs createmvp
+```
+
+## Contributing
+
+This is an open-source project. Contributions are welcome!
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## Differences from SaaS Version
+
+This self-hosted version removes:
+- Payment processing and subscriptions
+- Credit limits and usage tracking
+- Complex authentication providers
+- External database dependencies
+- Analytics and tracking (optional)
+
+And adds:
+- Local SQLite database
+- Simplified user management
+- Unlimited usage
+- Privacy-focused design
+- Easy self-hosting
 
 ## Contributing
 
@@ -247,7 +417,7 @@ export default function YourRuleName() {
   );
 }
 ```
-
 ## License
 
 This project is licensed under the [Apache 2.0 License](LICENSE).
+

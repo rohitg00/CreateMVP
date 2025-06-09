@@ -4,18 +4,26 @@ import { Textarea } from "@/components/ui/textarea";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Send, Loader2, Settings, Bot, User, Key } from "lucide-react";
+import { Send, Loader2, Settings, Bot, User, Info, LogIn, Key } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import ApiKeySettings from "./ApiKeySettings";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { motion, AnimatePresence } from "framer-motion";
+
+import { Link } from "wouter";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
   timestamp: string;
-  model?: string;
+  model?: string; // Add model to track which AI model responded
 }
 
 interface ChatHistoryResponse {
@@ -27,7 +35,9 @@ interface ChatHistoryResponse {
   createdAt: string;
 }
 
+// Model provider logos - updated with higher quality images
 const providerLogos = {
+  // Using updated logo URLs provided by the user
   openai: "https://static.vecteezy.com/system/resources/previews/022/227/364/non_2x/openai-chatgpt-logo-icon-free-png.png",
   google: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Google_Gemini_logo.svg/2560px-Google_Gemini_logo.svg.png",
   anthropic: "https://www.appengine.ai/uploads/images/profile/logo/Anthropic-AI.png",
@@ -38,9 +48,10 @@ const providerLogos = {
   athene: "https://pbs.twimg.com/profile_images/1751975661099257856/83PSMX6w_400x400.jpg",
   xai: "https://grok.x.ai/assets/images/logo/logo.svg",
   yi: "https://www.01.ai/assets/logo.svg",
-  default: "https://cdn-icons-png.flaticon.com/512/4616/4616734.png"
+  default: "https://cdn-icons-png.flaticon.com/512/4616/4616734.png" // Default logo for unknown providers
 };
 
+// Model display names by provider and model ID
 const modelDisplayNames = {
   openai: {
     "gpt-4o": "GPT-4o",
@@ -91,17 +102,21 @@ export default function AiChat() {
   const [selectedModel, setSelectedModel] = useState("gemini-1.5-flash-002");
   const [selectedProvider, setSelectedProvider] = useState("google");
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [preserveContext, setPreserveContext] = useState(true);
+  const [preserveContext, setPreserveContext] = useState(true); // Add state for context preservation
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const user = { id: 1, username: 'self-hosted-user' };
+  const isUserLoading = false;
 
+  // Define scrollToBottom function here to fix the undefined error
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   };
 
+  // Fetch available API keys with fallback support
   const { data: primaryApiKeys, isLoading: isLoadingPrimaryKeys } = useQuery({
     queryKey: ["/api/keys"],
     onSuccess: (data) => {
@@ -112,6 +127,7 @@ export default function AiChat() {
     }
   });
 
+  // Also try fetching from the alternate endpoint
   const { data: fallbackApiKeys, isLoading: isLoadingFallbackKeys } = useQuery({
     queryKey: ["/api/api-keys"],
     onSuccess: (data) => {
@@ -122,42 +138,58 @@ export default function AiChat() {
     }
   });
 
+  // Combine keys from both endpoints, prioritizing primary endpoint
   const apiKeys = useMemo(() => {
     const primaryKeys = primaryApiKeys || [];
     const fallbackKeys = fallbackApiKeys || [];
+
+    // Create a map to deduplicate by provider
     const keyMap = new Map();
+
+    // Add primary keys first
     primaryKeys.forEach(key => {
       keyMap.set(key.provider, key);
     });
+
+    // Add fallback keys only if the provider doesn't already exist
     fallbackKeys.forEach(key => {
       if (!keyMap.has(key.provider)) {
         keyMap.set(key.provider, key);
       }
     });
+
+    // Convert map back to array
     return Array.from(keyMap.values());
   }, [primaryApiKeys, fallbackApiKeys]);
 
+  // Combine loading states
   const isLoadingKeys = isLoadingPrimaryKeys || isLoadingFallbackKeys;
 
+  // Fetch chat history
   const { data: historyData, isLoading: isLoadingHistory } = useQuery({
     queryKey: ["/api/chat/history"],
     onSuccess: (data: ChatHistoryResponse[]) => {
+      // Transform the response data to our Message format
       const transformed: Message[] = data.map((item) => ({
         role: item.role,
         content: item.content,
         timestamp: item.createdAt,
         model: item.model,
       }));
+
+      // Set chat history from API response
       setChatHistory(transformed);
     },
   });
 
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
+      // Extract context from previous messages if preserveContext is enabled
       const contextMessages = preserveContext 
-        ? chatHistory.slice(-10)
-        : chatHistory.filter(msg => msg.model === selectedModel).slice(-10);
+        ? chatHistory.slice(-10) // Use last 10 messages for context regardless of model
+        : chatHistory.filter(msg => msg.model === selectedModel).slice(-10); // Or only use messages from the current model
 
+      // Add current user message
       const userMessage = {
         role: "user", 
         content: message,
@@ -170,6 +202,8 @@ export default function AiChat() {
       }));
 
       console.log(`Sending request to /api/chat with model ${selectedModel} and ${messagesForAPI.length} messages`);
+
+      // Log the API request for debugging
       console.log("API Request:", {
         model: selectedModel,
         messages: messagesForAPI,
@@ -177,6 +211,7 @@ export default function AiChat() {
       });
 
       try {
+        // Use fetch instead of apiRequest for more control over response handling
         const response = await fetch("/api/chat", {
           method: "POST",
           headers: {
@@ -192,6 +227,7 @@ export default function AiChat() {
 
         console.log("Raw response status:", response.status);
 
+        // Check for error responses
         if (!response.ok) {
           let errorMessage = "Failed to send message";
           try {
@@ -203,14 +239,19 @@ export default function AiChat() {
           throw new Error(errorMessage);
         }
 
+        // Try to parse as JSON first
         try {
           const jsonData = await response.json();
           console.log("Parsed JSON response:", jsonData);
           return jsonData;
         } catch (e) {
           console.error("Failed to parse JSON response:", e);
+
+          // If JSON parsing fails, get as text
           const textData = await response.text();
           console.log("Response as text:", textData);
+
+          // Return plain text wrapped in an object
           return { response: textData };
         }
       } catch (error) {
@@ -219,8 +260,12 @@ export default function AiChat() {
       }
     },
     onSuccess: (data) => {
+      // Log the entire data object to see its structure
       console.log("Complete response data from API:", JSON.stringify(data, null, 2));
-      // Remove credits logic (no user/credits)
+
+
+
+      // Extract the response text - safely check all possible properties
       const responseText = typeof data === 'string' 
         ? data 
         : (data.response || data.message || data.content || data.text || 
@@ -229,9 +274,16 @@ export default function AiChat() {
 
       console.log("Extracted response text:", responseText);
 
+      // Directly update the chat history with the response for immediate feedback
+      // Replace the latest "..." message with the actual response
       setChatHistory(prev => {
         const newHistory = [...prev];
+        // Find and replace the loading message
         const loadingMsgIndex = newHistory.findIndex(msg => msg.content === "...");
+
+        // Log for debugging
+        console.log("Loading message index:", loadingMsgIndex);
+
         if (loadingMsgIndex !== -1) {
           newHistory[loadingMsgIndex] = {
             role: "assistant",
@@ -240,6 +292,8 @@ export default function AiChat() {
             model: selectedModel
           };
         } else {
+          // If no loading message found, add the response as a new message
+          console.log("No loading message found, adding response as new message");
           newHistory.push({
             role: "assistant",
             content: responseText,
@@ -250,16 +304,20 @@ export default function AiChat() {
         return newHistory;
       });
 
+      // Force a re-render by updating the state
       setTimeout(() => {
         scrollToBottom();
       }, 100);
 
+      // Then invalidate the query to update history in the background (for consistency)
       queryClient.invalidateQueries({ queryKey: ["/api/chat/history"] });
     },
     onError: (error: any) => {
+      // Check if it's an API key required error
       const isApiKeyError = error.response?.data?.error === "API_KEY_REQUIRED";
       const provider = error.response?.data?.apiProvider || selectedProvider;
 
+      // Show appropriate toast message
       if (isApiKeyError) {
         toast({
           title: "API Key Required",
@@ -284,6 +342,7 @@ export default function AiChat() {
         });
       }
 
+      // Replace the loading message with an appropriate error
       setChatHistory(prev => {
         const newHistory = [...prev];
         const loadingMsgIndex = newHistory.findIndex(msg => msg.content === "...");
@@ -299,6 +358,7 @@ export default function AiChat() {
             model: selectedModel
           };
         } else {
+          // If no loading message found, add a new error message
           newHistory.push({
             role: "assistant",
             content: errorMessage,
@@ -311,6 +371,7 @@ export default function AiChat() {
     }
   });
 
+  // Define available models by provider
   const modelsByProvider: Record<string, {id: string, name: string}[]> = {
     openai: [
       { id: "gpt-4.1", name: "GPT-4.1" },
@@ -366,17 +427,21 @@ export default function AiChat() {
     ]
   };
 
+  // Handler for provider change
   const handleProviderChange = (provider: string) => {
     setSelectedProvider(provider);
+    // Set the first model of the new provider as selected
     if (modelsByProvider[provider]?.length > 0) {
       setSelectedModel(modelsByProvider[provider][0].id);
     }
   };
 
+  // Add a more robust useEffect to scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
   }, [chatHistory]);
 
+  // Add debugging logs for chat history updates
   useEffect(() => {
     console.log("AiChat component rendered with:", {
       selectedModel,
@@ -384,11 +449,15 @@ export default function AiChat() {
       isLoadingHistory,
       messagesCount: chatHistory.length
     });
+
+    // Log the complete chat history for debugging
     console.log("Current chat history:", JSON.stringify(chatHistory, null, 2));
   }, [chatHistory, selectedModel, selectedProvider, isLoadingHistory]);
 
+  // Add a useEffect to better preserve context between chat history updates
   useEffect(() => {
     if (historyData && preserveContext) {
+      // Ensure all messages have the currently selected model assigned when preserve context is enabled
       setChatHistory(prev => prev.map(msg => {
         if (msg.role === "assistant" && !msg.model) {
           return { ...msg, model: selectedModel };
@@ -408,8 +477,10 @@ export default function AiChat() {
       model: selectedModel,
     };
 
+    // Add the user message to chat history
     setChatHistory((prev) => [...prev, userMessage]);
 
+    // Create an assistant message placeholder with "typing" indicator
     const assistantPlaceholder: Message = {
       role: "assistant",
       content: "...",
@@ -417,24 +488,41 @@ export default function AiChat() {
       model: selectedModel,
     };
 
+    // Add the placeholder to chat
     setChatHistory((prev) => [...prev, assistantPlaceholder]);
+
+    // Clear the input field
     setMessage("");
 
+    // Scroll to bottom safely
     setTimeout(() => {
       scrollToBottom();
     }, 100);
 
     try {
       console.log("Before sending message - content:", userMessage.content);
+
+      // Use the mutation to send the message
       const response = await sendMessageMutation.mutateAsync(userMessage.content);
       console.log("Message sent successfully, received response:", response);
 
+      // Note: Normally the onSuccess callback would handle the response,
+      // but we'll add a direct update here for immediate feedback
+
+      // This is a fallback in case the mutation's onSuccess doesn't trigger
       if (response && !response.error) {
         console.log("Backup direct update with response:", response);
+
+        // Extract the response text using a comprehensive check for different formats
         let responseText = '';
+
+        // Handle string responses
         if (typeof response === 'string') {
           responseText = response;
-        } else if (typeof response === 'object' && response !== null) {
+        } 
+        // Handle object responses with standard fields
+        else if (typeof response === 'object' && response !== null) {
+          // Try all common response fields
           responseText = response.response || 
                          response.message || 
                          response.content || 
@@ -443,6 +531,8 @@ export default function AiChat() {
                          response.result ||
                          response.output ||
                          '';
+
+          // If still no content found, try to extract the first string value
           if (!responseText && typeof response === 'object') {
             const values = Object.values(response);
             for (const val of values) {
@@ -453,14 +543,19 @@ export default function AiChat() {
             }
           }
         }
+
+        // Default message if we couldn't extract any text
         if (!responseText) {
           responseText = "Received a response but couldn't extract the content. Please try again.";
         }
+
         console.log("Extracted response text for direct update:", responseText);
 
+        // Find and update the placeholder message directly
         setChatHistory(prev => {
           const newHistory = [...prev];
           const loadingIndex = newHistory.findIndex(msg => msg.content === "...");
+
           if (loadingIndex !== -1) {
             newHistory[loadingIndex] = {
               role: "assistant",
@@ -469,6 +564,7 @@ export default function AiChat() {
               model: selectedModel
             };
           } else {
+            // If no loading message found (unusual case), add as new message
             newHistory.push({
               role: "assistant",
               content: responseText,
@@ -485,10 +581,13 @@ export default function AiChat() {
       }
     } catch (error) {
       console.error("Error sending message:", error);
+
+      // Show error in chat in case the mutation's onError doesn't handle it
       setChatHistory(prev => {
         const newHistory = [...prev];
         const loadingIndex = newHistory.findIndex(msg => msg.content === "...");
         const errorMessage = "Sorry, there was an error processing your request. Please try again.";
+
         if (loadingIndex !== -1) {
           newHistory[loadingIndex] = {
             role: "assistant",
@@ -502,20 +601,29 @@ export default function AiChat() {
     }
   };
 
+  // Get the display name for a model
   const getModelDisplayName = (model?: string) => {
     if (!model) return "AI Assistant";
+
+    // Extract provider from model ID
     const provider = Object.keys(modelDisplayNames).find(p => 
       Object.keys(modelDisplayNames[p]).includes(model)
     );
+
     if (provider && modelDisplayNames[provider][model]) {
       return modelDisplayNames[provider][model];
     }
+
     return "AI Assistant";
   };
 
+  // Enhanced function for getting model logos
   const getLogoForModel = (model?: string) => {
     if (!model) return providerLogos.default;
+
+    // Extract provider from model name
     let provider = "default";
+
     if (model.includes("gpt") || model.includes("o1-") || model.includes("o3-") || model.includes("text-")) {
       provider = "openai";
     } else if (model.includes("gemini")) {
@@ -537,9 +645,11 @@ export default function AiChat() {
     } else if (model.includes("yi")) {
       provider = "yi";
     }
+
     return providerLogos[provider] || providerLogos.default;
   };
 
+  // Preload provider logos to avoid loading issues
   useEffect(() => {
     Object.values(providerLogos).forEach(url => {
       const img = new Image();
@@ -547,7 +657,35 @@ export default function AiChat() {
     });
   }, []);
 
-  // No authentication/credits checks
+  // Check if user is logged in
+  if (!user) {
+    return (
+      <div className="flex flex-col h-full bg-gradient-to-b from-slate-900 to-indigo-950 rounded-xl border border-slate-800 shadow-xl p-8 text-center">
+        <div className="flex flex-col items-center justify-center h-full">
+          <Bot className="h-16 w-16 text-indigo-400 mb-4" />
+          <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400 mb-4">
+            Please Log In to Use AI Chat
+          </h2>
+          <p className="text-slate-300 max-w-md mb-8">
+            You need to be logged in to use the AI chat features. Sign up for free or log in to your account.
+          </p>
+          <div className="flex gap-4">
+            <Link href="/auth/login">
+              <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                <LogIn className="mr-2 h-4 w-4" />
+                Log In
+              </Button>
+            </Link>
+            <Link href="/auth/signup">
+              <Button variant="outline" className="border-indigo-500/50 bg-indigo-950/50 text-indigo-300 hover:bg-indigo-900/50">
+                Create Account
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-b from-slate-900 to-indigo-950 rounded-xl border border-slate-800 shadow-xl p-4">
@@ -601,8 +739,10 @@ export default function AiChat() {
                 className="bg-slate-800 border border-slate-700 text-slate-200 rounded-md pl-9 pr-3 py-1.5 text-sm focus:ring-indigo-500 focus:border-indigo-500 appearance-none"
               >
                 {Object.keys(modelsByProvider).map(provider => {
+                  // Only show providers for which user has API keys
                   const hasApiKey = apiKeys?.some(k => k.provider === provider);
                   if (!hasApiKey && apiKeys?.length > 0) return null;
+
                   return (
                     <option key={provider} value={provider}>
                       {provider.charAt(0).toUpperCase()+ provider.slice(1)}
@@ -617,7 +757,7 @@ export default function AiChat() {
                     alt={selectedProvider}
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      e.currentTarget.src = providerLogos.default;
+                      e.currentTarget.src = providerLogos.default; // Fallback to default if image fails to load
                     }}
                   />
                 </div>
@@ -636,6 +776,8 @@ export default function AiChat() {
                 </option>
               ))}
             </select>
+
+            {/* Model selection dropdown only */}
           </div>
 
           <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
@@ -752,7 +894,7 @@ export default function AiChat() {
                             loading="eager"
                             onError={(e) => {
                               console.log(`Error loading logo for ${msg.model}, using default`);
-                              e.currentTarget.src = providerLogos.default;
+                              e.currentTarget.src = providerLogos.default; // Fallback if image loading fails
                             }}
                           />
                         ) : (
@@ -764,9 +906,12 @@ export default function AiChat() {
                       {msg.role === "user" ? "You" : getModelDisplayName(msg.model)} • {new Date(msg.timestamp).toLocaleTimeString()}
                     </div>
                   </div>
+
+                  {/* Add debugging information for message content - rendered outside the JSX */}
                   <div className="hidden">
                     {console.log(`Message ${index} content: ${JSON.stringify(msg.content)}`)}
                   </div>
+
                   {msg.content === "..." ? (
                     <div className="flex space-x-1 items-center py-2">
                       <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>

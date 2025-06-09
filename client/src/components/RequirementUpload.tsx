@@ -10,13 +10,13 @@ import {
   FileCode, FileCog, FileSearch, Activity, GitPullRequest, 
   ListChecks, Workflow, UploadCloud, File as FileIcon, X, ChevronsUpDown, Check
 } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import GeneratedFiles from "./GeneratedFiles";
 import FileViewer from "./FileViewer";
 import { useLocation } from "wouter";
 import JSZip from 'jszip';
-import { useUser } from "@/lib/userContext";
+
 
 // Define file type icons with full descriptive names
 const fileTypeIcons: Record<string, { icon: React.ReactNode; fullName: string }> = {
@@ -204,31 +204,48 @@ export default function RequirementUpload() {
   const [fileContent, setFileContent] = useState<string>("");
   const [fileViewerOpen, setFileViewerOpen] = useState<boolean>(false);
   const [zipData, setZipData] = useState<string | null>(null);
-  const { user, loadUser, setCredits } = useUser();
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
+  const [isCanceled, setIsCanceled] = useState<boolean>(false);
+  const queryClient = useQueryClient();
+  const [isDownloading, setIsDownloading] = useState<boolean>(false);
 
   const generatePlanMutation = useMutation({
     mutationFn: async (data: { text: string; file?: File }) => {
+      console.log("Self-hosted version - proceeding without authentication check");
+      
       // Create FormData object
       const formData = new FormData();
       
-      // Explicitly set text field
-      formData.append("text", data.text || "");
+      // Explicitly set text field - if it's empty, use an empty string instead of undefined
+      // This ensures the field is still present in the FormData
+      const trimmedText = data.text ? data.text.trim() : "";
+      formData.append("text", trimmedText);
+      
+      // Log the text value being sent
+      console.log("Text value being sent:", trimmedText ? `'${trimmedText}' (${trimmedText.length} chars)` : "(empty string)");
       
       // Add file if it exists
       if (data.file) {
-        formData.append("file", data.file);
+        console.log("Appending file to form data:", data.file.name, data.file.size, data.file.type);
+        try {
+          formData.append("file", data.file);
+          console.log("File successfully appended to FormData");
+        } catch (error) {
+          console.error("Error appending file to FormData:", error);
+          throw new Error("Failed to process the PDF file");
+        }
       }
       
-      // Simulate generation stages for better UX
+      // Start visual progress indication for better UX
       setGenerationStage("analyzing");
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       setGenerationStage("planning");
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       setGenerationStage("generating");
       
-      // Use the actual files from the screenshot
+      // Set up files to generate
       const filesToGenerate = [
         "requirements.md",
         "backend.md",
@@ -241,49 +258,115 @@ export default function RequirementUpload() {
       
       setGeneratingFiles(filesToGenerate);
       
-      for (const file of filesToGenerate) {
-        // Add file to generating list
-        await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 1200));
+      // Simulate progress for each file (while request is in progress)
+      let fileProgressComplete = false;
+      
+      // Start file progress animation
+      (async () => {
+        for (const file of filesToGenerate) {
+          if (fileProgressComplete) break;
+          await new Promise(resolve => setTimeout(resolve, 600 + Math.random() * 600));
+          setCompletedFiles(prev => [...prev, file]);
+        }
+      })();
+      
+      try {
+        // Log request debugging info
+        console.log("Self-hosted version - no authentication required");
+        console.log("Making API request with credentials...");
         
-        // Mark file as completed
-        setCompletedFiles(prev => [...prev, file]);
+        // Create controller for fetch abort capability
+        const controller = new AbortController();
+        setAbortController(controller);
+        
+        // Extend timeout for this fetch request to 10 minutes
+        const fetchTimeout = 600000; // 10 minutes
+        const timeoutId = setTimeout(() => {
+          controller.abort();
+        }, fetchTimeout);
+        
+        // Make the API request with explicit credentials and the signal
+        const response = await fetch("/api/generate-plan", {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Accept": "application/json",
+          },
+          body: formData,
+          signal: controller.signal
+        });
+        
+        // Clear the timeout since we got a response
+        clearTimeout(timeoutId);
+        
+        // Log response headers for debugging
+        console.log("Response status:", response.status);
+        console.log("Response headers:", Object.fromEntries(response.headers.entries()));
+        
+        // Stop the file progress animation
+        fileProgressComplete = true;
+        
+        // Handle non-OK responses
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Error response:", errorText);
+          
+          // Check for authentication errors - simplified for self-hosted version
+          if (response.status === 401) {
+            throw new Error("Server error. Please try again.");
+          }
+          
+          throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+        }
+        
+        // Parse the JSON response carefully
+        let result;
+        const contentType = response.headers.get("content-type");
+        
+        if (!contentType || !contentType.includes("application/json")) {
+          const textResponse = await response.text();
+          console.error("Received non-JSON response:", textResponse.substring(0, 200) + "...");
+          throw new Error("Server returned non-JSON response. Please try again.");
+        }
+        
+        try {
+          result = await response.json();
+        } catch (error) {
+          console.error("Error parsing JSON response", error);
+          throw new Error("Failed to parse server response. Please try again.");
+        }
+        
+        // Complete the progress indication
+        setGenerationStage("finalizing");
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        setGenerationStage("complete");
+        setShowGeneratedFiles(true);
+        
+        return result;
+      } catch (error: any) {
+        // Ensure progress animation stops
+        fileProgressComplete = true;
+        
+        // Log detailed error info
+        console.error("Fetch error details:", {
+          name: error?.name || 'Unknown',
+          message: error?.message || 'Unknown error',
+          isAbortError: error?.name === 'AbortError',
+          stack: error?.stack || 'No stack trace'
+        });
+        
+        // Special handling for abort errors
+        if (error?.name === 'AbortError') {
+          if (isCanceled) {
+            throw new Error("Plan generation was canceled by user.");
+          } else {
+            throw new Error("Plan generation timed out. Please try again with more specific requirements.");
+          }
+        }
+        
+        throw error;
       }
-      
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Make the API request
-      const response = await fetch("/api/generate-plan", {
-        method: "POST",
-        body: formData,
-      });
-      
-      // Log the response content type for debugging
-      const contentType = response.headers.get("content-type");
-      console.log("Response content type:", contentType);
-      
-      // Handle non-OK responses
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Error response:", errorText);
-        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
-      }
-      
-      // Safely check if the response is JSON before parsing
-      if (!contentType || !contentType.includes("application/json")) {
-        const textResponse = await response.text();
-        console.error("Received non-JSON response:", textResponse.substring(0, 200) + "...");
-        throw new Error("Server returned non-JSON response. Please try again.");
-      }
-      
-      // Parse the JSON response
-      const result = await response.json();
-      
-      setGenerationStage("finalizing");
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setGenerationStage("complete");
-      setShowGeneratedFiles(true);
-      return result;
     },
     onSuccess: async (data) => {
       console.log("Plan generation successful with FULL data:", data);
@@ -300,15 +383,6 @@ export default function RequirementUpload() {
       // Show the generated files section
       setShowGeneratedFiles(true);
       setGenerationStage("complete");
-      
-      // If the user is on the free plan, update their credits in UI
-      if (user && user.plan === "free") {
-        // Refresh user data to get updated credit count
-        await loadUser();
-        
-        // Show credit usage toast
-        showCreditUpdateToast();
-      }
       
       toast({
         title: "Success",
@@ -359,18 +433,79 @@ export default function RequirementUpload() {
     onError: (error: any) => {
       console.error("Error generating plan:", error);
       
+      // Check for authentication errors
+      if (error.message?.includes("401") || error.message?.includes("Authentication required")) {
+        console.error("Authentication error detected. User might be logged out or session expired.");
+        
+        // Show auth error toast with login button
+        toast({
+          title: "Generation Error",
+          description: "Failed to generate plan. Please try again.",
+          variant: "destructive",
+        });
+        
+        setStatus("auth-error");
+        setStatusMessage("Authentication required. Please log in again.");
+        return;
+      }
+      
+      // Check for timeout errors
+      if (error.message?.includes("timeout") || 
+          error.message?.includes("504") || 
+          error.message?.includes("timed out") ||
+          error?.response?.status === 504) {
+        console.error("Request timeout detected. The generation process took too long.");
+        
+        let errorMessage = "The generation process timed out. This usually happens with complex requirements.";
+        
+        // Show timeout error toast with helpful suggestions
+        toast({
+          title: "Generation Timeout",
+          description: (
+            <div className="flex flex-col gap-2">
+              <p>Your request timed out. Try again with more specific, focused requirements.</p>
+              <ul className="list-disc list-inside text-sm mt-2">
+                <li>Keep requirements under 1000 words</li>
+                <li>Focus on the core functionality</li>
+                <li>Be specific about what you need</li>
+              </ul>
+              <Button 
+                variant="default" 
+                className="mt-2"
+                onClick={() => {
+                  // Reset the form for a new attempt
+                  setGenerationStage(null);
+                  setGeneratingFiles([]);
+                  setCompletedFiles([]);
+                  setStatus("idle");
+                  setStatusMessage("");
+                }}
+              >
+                Try Again
+              </Button>
+            </div>
+          ),
+          variant: "destructive",
+          duration: 10000, // Show for longer
+        });
+        
+        setStatus("timeout-error");
+        setStatusMessage("Generation timed out. Please try again with more focused requirements.");
+        return;
+      }
+      
       // Check if it's a credit limit error
       let errorMessage = "Failed to generate implementation plan";
       
-      if (error?.response?.data?.error === "Credit limit reached") {
-        errorMessage = "You've used all your free generation credits. Please upgrade to the Pro plan for unlimited generations.";
+      if (error?.response?.data?.error === "Generation failed") {
+        errorMessage = "Failed to generate implementation plan. Please try again.";
         
-        // Show toast with upgrade button
+        // Show toast with retry option
         toast({
-          title: "Credit Limit Reached",
+          title: "Generation Failed",
           description: (
             <div className="flex flex-col gap-2">
-              <p>You've used all your free generation credits.</p>
+              <p>Plan generation failed. Please try again.</p>
               <Button 
                 variant="default" 
                 className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white"
@@ -380,6 +515,15 @@ export default function RequirementUpload() {
               </Button>
             </div>
           ),
+          variant: "destructive",
+        });
+      } else if (error.message?.includes("non-JSON response")) {
+        // Handle non-JSON responses more gracefully
+        errorMessage = "The server returned an unexpected response format. Please try again.";
+        
+        toast({
+          title: "Server Error",
+          description: errorMessage,
           variant: "destructive",
         });
       } else {
@@ -401,19 +545,58 @@ export default function RequirementUpload() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+      const selectedFile = e.target.files[0];
+      console.log("PDF file selected:", selectedFile.name, selectedFile.size);
+      
+      // Validate file is a PDF
+      if (!selectedFile.type.includes('pdf')) {
+        toast({
+          title: "Invalid File Type",
+          description: "Please upload a PDF file",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Validate file size (max 10MB)
+      if (selectedFile.size > 10 * 1024 * 1024) {
+        toast({
+          title: "File Too Large",
+          description: "Please upload a PDF smaller than 10MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Set the file
+      setFile(selectedFile);
+      toast({
+        title: "PDF Uploaded",
+        description: `${selectedFile.name} has been uploaded and ready for processing`,
+      });
     }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("handleSubmit called");
+    
+    // Reset cancel state if previously canceled
+    if (isCanceled) {
+      setIsCanceled(false);
+    }
+    
     setGeneratedPlan(null);
     setGeneratingFiles([]);
     setCompletedFiles([]);
     setShowGeneratedFiles(false);
     
-    if (!textInput.trim() && !file) {
+    const hasText = textInput && textInput.trim() !== "";
+    const hasFile = !!file;
+    
+    console.log("Validating submission - Has text:", hasText, "Has file:", hasFile);
+    
+    if (!hasText && !hasFile) {
       toast({
         title: "Error",
         description: "Please provide requirements via text or PDF",
@@ -428,8 +611,40 @@ export default function RequirementUpload() {
       file: file || undefined
     };
     
-    // Call the mutation
-    generatePlanMutation.mutate(requestData);
+    console.log("Submitting with text length:", textInput.length, "and file:", file?.name || "none");
+    
+    // Call the mutation only if not in canceled state
+    if (!isCanceled) {
+      generatePlanMutation.mutate(requestData);
+    }
+  };
+
+  // Function to cancel the ongoing generation
+  const handleCancelGeneration = () => {
+    if (abortController) {
+      console.log("Canceling plan generation...");
+      // Abort the current fetch request
+      abortController.abort();
+      setAbortController(null);
+      
+      // Reset UI states
+      setGenerationStage(null);
+      setGeneratingFiles([]);
+      setCompletedFiles([]);
+      setStatus("canceled");
+      setStatusMessage("Plan generation canceled by user.");
+      
+      // VERY Important: Reset mutation state to prevent auto-restart
+      generatePlanMutation.reset();
+      
+      // Set a flag to prevent automatic restarts
+      setIsCanceled(true);
+      
+      toast({
+        title: "Generation Canceled",
+        description: "You've canceled the plan generation process.",
+      });
+    }
   };
 
   const handleDownloadAll = () => {
@@ -523,8 +738,9 @@ export default function RequirementUpload() {
     
     // Check if we have content from the API
     if (generatedPlan?.files && generatedPlan.files[fileName]) {
+      // Always use the original high-quality content from first generation
       content = generatedPlan.files[fileName];
-      console.log(`Using actual content for ${fileName} from API`);
+      console.log(`Using original high-quality content for ${fileName} from first generation`);
     }
     // Try to use sample content if available
     else if (sampleFileContents[fileName + '.md']) {
@@ -549,18 +765,91 @@ export default function RequirementUpload() {
     }
   }, [generationStage]);
 
-  // Updated download function that falls back to a direct API call
+  // Download function that prioritizes the cached server copy
   const downloadPlan = () => {
     console.log("Download function called");
-    console.log("generatedPlan available:", generatedPlan);
+    console.log("This should NOT trigger a new generation");
     
-    if (generatedPlan?.zipBuffer) {
-      console.log("Using zipBuffer from state, length:", generatedPlan.zipBuffer.length);
-      try {
-        // Log the zipBuffer to verify it exists
-        console.log("zipBuffer length:", generatedPlan.zipBuffer.length);
+    // Track download attempts to prevent duplicates
+    if (isDownloading) {
+      console.log("Download already in progress, ignoring duplicate request");
+      return;
+    }
+    
+    setIsDownloading(true);
+    
+    // Always use the direct server download to avoid regeneration
+    downloadFromServer();
+    
+    // Function to download the plan directly from the server API
+    function downloadFromServer() {
+      console.log("Downloading from server via /api/latest-plan-zip");
+      
+      toast({
+        title: "Downloading",
+        description: "Retrieving your implementation plan...",
+      });
+      
+      // Make a direct GET request to our cached plan endpoint
+      fetch('/api/latest-plan-zip', {
+        method: 'GET',
+        credentials: 'include',  // Important: include session cookies for authentication
+        headers: {
+          'X-Download-Request': 'true'  // Mark this as an explicit download request
+        }
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`Server download failed: ${response.status} ${response.statusText}`);
+        }
+        return response.blob();
+      })
+      .then(blob => {
+        // Create and trigger the download
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'implementation-plan.zip';
+        document.body.appendChild(a);
+        a.click();
         
-        // Simple direct conversion from base64 to blob
+        // Clean up
+        setTimeout(() => {
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          setIsDownloading(false);
+        }, 100);
+        
+        console.log("Server download successful");
+        
+        toast({
+          title: "Download Complete",
+          description: "Your implementation plan has been downloaded",
+        });
+      })
+      .catch(error => {
+        console.error("Server download error:", error);
+        setIsDownloading(false);
+        
+        // Try fallback to in-memory data if available
+        if (generatedPlan?.zipBuffer) {
+          console.log("Attempting fallback to in-memory zipBuffer");
+          downloadFromMemory();
+        } else {
+          toast({
+            title: "Download Failed",
+            description: "Could not download the implementation plan. Please try again.",
+            variant: "destructive",
+          });
+        }
+      });
+    }
+    
+    // Fallback function to use in-memory zip buffer data
+    function downloadFromMemory() {
+      console.log("Using zipBuffer from state");
+      try {
+        // Convert base64 to blob
         const binaryString = atob(generatedPlan.zipBuffer);
         const bytes = new Uint8Array(binaryString.length);
         for (let i = 0; i < binaryString.length; i++) {
@@ -582,93 +871,24 @@ export default function RequirementUpload() {
         setTimeout(() => {
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
+          setIsDownloading(false);
         }, 100);
         
-        console.log("Download triggered successfully from state data");
-        
-        toast({
-          title: "Download Started",
-          description: "Your implementation plan is being downloaded",
-        });
-      } catch (error) {
-        console.error("Download error:", error);
-        fallbackToServerDownload();
-      }
-    } else {
-      console.error("No zipBuffer found in generatedPlan state, trying server download");
-      fallbackToServerDownload();
-    }
-    
-    // Fallback function to request ZIP directly from server
-    function fallbackToServerDownload() {
-      console.log("Attempting fallback download from server...");
-      
-      toast({
-        title: "Downloading",
-        description: "Requesting implementation plan from server...",
-      });
-      
-      // Make a direct GET request to a new endpoint that returns the ZIP file
-      fetch('/api/latest-plan-zip', {
-        method: 'GET',
-      })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Server download failed');
-        }
-        return response.blob();
-      })
-      .then(blob => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'implementation-plan.zip';
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => {
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
-        }, 100);
-        
-        console.log("Fallback download successful");
+        console.log("Memory download successful");
         
         toast({
           title: "Download Complete",
           description: "Your implementation plan has been downloaded",
         });
-      })
-      .catch(error => {
-        console.error("Fallback download error:", error);
+      } catch (error) {
+        console.error("Memory download error:", error);
+        setIsDownloading(false);
         toast({
           title: "Download Failed",
-          description: "Unable to download plan. Please try again later.",
+          description: "Could not download the implementation plan. Please try again later.",
           variant: "destructive",
         });
-      });
-    }
-  };
-
-  // Add a function to show credit usage information
-  const showCreditUpdateToast = () => {
-    if (user && user.plan === "free") {
-      toast({
-        title: "Credit Used",
-        description: (
-          <div className="space-y-2">
-            <p>You've used 1 credit for this plan generation.</p>
-            <div className="flex items-center justify-between text-sm text-slate-200">
-              <span>Credits remaining: {user.credits}</span>
-              <span>{user.credits}/5</span>
-            </div>
-            <div className="w-full bg-slate-700 rounded-full h-2.5">
-              <div 
-                className="bg-gradient-to-r from-indigo-500 to-purple-600 h-2.5 rounded-full" 
-                style={{ width: `${(user.credits / 5) * 100}%` }}
-              ></div>
-            </div>
-          </div>
-        ),
-      });
+      }
     }
   };
 
@@ -768,6 +988,19 @@ export default function RequirementUpload() {
                         {/* File generation animation */}
                         {generationStage === "generating" && (
                           <div className="mt-4 pl-9 space-y-2">
+                            {/* Cancel Generation Button */}
+                            <div className="mb-3">
+                              <Button 
+                                onClick={handleCancelGeneration}
+                                variant="destructive"
+                                size="sm"
+                                className="flex items-center gap-1"
+                              >
+                                <X className="h-4 w-4" />
+                                Cancel Generation
+                              </Button>
+                            </div>
+                          
                             <AnimatePresence>
                               {generatingFiles.map((file) => {
                                 const isCompleted = completedFiles.includes(file);
@@ -817,50 +1050,105 @@ export default function RequirementUpload() {
               </AnimatePresence>
 
               <div className="space-y-4">
-                <Button
-                  variant="default"
-                  size="lg"
-                  className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 py-6"
-                  disabled={generatePlanMutation.isPending || (!textInput.trim() && !file)}
-                  onClick={handleSubmit}
-                >
-                  {generatePlanMutation.isPending ? (
-                    <>
+                {generatePlanMutation.isPending ? (
+                  <div className="flex gap-3">
+                    <Button
+                      variant="default"
+                      size="lg"
+                      className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 py-6"
+                      disabled={true}
+                    >
                       <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                       {generationStage ? generationStages[generationStage]?.text : 'Generating...'}
-                    </>
-                  ) : (
-                    <>
-                      <UploadCloud className="mr-2 h-5 w-5" />
-                      Generate Implementation Plan
-                    </>
-                  )}
-                </Button>
-                
-                {/* Large download button that appears after generation */}
-                {generationStage === "complete" && (
-                  <div className="mt-4 animate-pulse">
-                    <Button
-                      variant="outline"
+                    </Button>
+                    <Button 
+                      variant="destructive"
                       size="lg"
-                      className="w-full flex items-center justify-center py-6 bg-green-600/40 hover:bg-green-600/70 border-green-500/50 text-white"
-                      onClick={() => {
-                        console.log("Primary download button clicked");
-                        if (generatedPlan?.zipBuffer) {
-                          downloadPlan();
-                        } else {
-                          toast({
-                            title: "Download Error",
-                            description: "No ZIP data available to download",
-                            variant: "destructive",
-                          });
-                        }
-                      }}
+                      className="px-4"
+                      onClick={handleCancelGeneration}
                     >
-                      <Download className="mr-2 h-5 w-5" />
-                      Download Implementation Plan
+                      <X className="h-5 w-5" />
                     </Button>
                   </div>
+                ) : (
+                  <Button
+                    variant="default"
+                    size="lg"
+                    className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 py-6"
+                    disabled={!textInput.trim() && !file}
+                    onClick={handleSubmit}
+                  >
+                    <UploadCloud className="mr-2 h-5 w-5" />
+                    Generate Implementation Plan
+                  </Button>
+                )}
+                
+                <div className="bg-gradient-to-br from-indigo-950 to-purple-950 border border-indigo-400/40 rounded-xl p-6 shadow-lg relative overflow-hidden my-4">
+                  {/* Subtle glow effect */}
+                  <div className="absolute -top-10 -right-10 w-24 h-24 bg-indigo-500/10 rounded-full blur-xl"></div>
+                  <div className="absolute -bottom-10 -left-10 w-20 h-20 bg-purple-500/10 rounded-full blur-xl"></div>
+
+                  <div className="flex flex-col items-center text-center space-y-3 relative z-10">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-300">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+
+                    <p className="text-slate-200 text-base max-w-lg">
+                      <span className="font-bold text-indigo-300">Almost there!</span> Your tailored MVP plan is being crafted with 
+                      <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent font-semibold mx-1">industry-leading AI</span>. 
+                      This thoughtful analysis typically takes 2-5 minutes — your patience will be rewarded with exceptional insights.
+                      Please keep this window open during generation.
+                    </p>
+                  </div>
+                </div>                
+                {/* Large download button that appears after generation */}
+                {generationStage === "complete" && (
+                  <>
+                    <div className="mt-4 animate-pulse">
+                      <Button
+                        variant="outline"
+                        size="lg"
+                        className="w-full flex items-center justify-center py-6 bg-green-600/40 hover:bg-green-600/70 border-green-500/50 text-white"
+                        onClick={() => {
+                          console.log("Primary download button clicked");
+                          if (generatedPlan?.zipBuffer) {
+                            downloadPlan();
+                          } else {
+                            toast({
+                              title: "Download Error",
+                              description: "No ZIP data available to download",
+                              variant: "destructive",
+                            });
+                          }
+                        }}
+                        disabled={isDownloading}
+                      >
+                        {isDownloading ? (
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        ) : (
+                          <Download className="mr-2 h-5 w-5" />
+                        )}
+                        {isDownloading ? "Downloading..." : "Download Implementation Plan"}
+                      </Button>
+                    </div>
+                    
+                    {/* Information note about download differences */}
+                    <div className="mt-4 p-3 bg-blue-900/30 border border-blue-500/30 rounded-lg text-sm text-blue-200">
+                      <div className="flex items-start gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-400 mt-0.5">
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <path d="M12 16v-4"></path>
+                          <path d="M12 8h.01"></path>
+                        </svg>
+                        <div>
+                          <p className="font-medium text-blue-300 mb-1">About Downloads</p>
+                          <p>The <span className="text-blue-300">automatic download</span> that occurred after generation contains the highest-quality content. Manual downloads may be smaller but contain slightly different content due to regeneration from cached requirements.</p>
+                          <p className="mt-1">For best results, use the initial automatic download when possible.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
 
@@ -942,8 +1230,8 @@ export default function RequirementUpload() {
                         e.stopPropagation();
                         handleViewFile(fileName);
                       }}
-                      leftIcon={<FileText className="h-5 w-5" />}
                     >
+                      <FileText className="h-5 w-5" />
                     </Button>
                   </div>
                 </div>
@@ -953,8 +1241,13 @@ export default function RequirementUpload() {
               <Button
                 className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-md text-white"
                 onClick={downloadPlan}
-                leftIcon={<Download className="h-4 w-4" />}
+                disabled={isDownloading}
               >
+                {isDownloading ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4 mr-2" />
+                )}
                 Download All Files
               </Button>
             </div>
@@ -967,6 +1260,7 @@ export default function RequirementUpload() {
         fileName={selectedFile || ""}
         content={fileContent || "No content available"}
         isOpen={fileViewerOpen}
+        isOriginalContent={!!generatedPlan?.files && !!generatedPlan.files[selectedFile || ""]}
         onClose={() => {
           console.log("FileViewer closed");
           setFileViewerOpen(false);
@@ -980,8 +1274,13 @@ export default function RequirementUpload() {
           <Button 
             className="shadow-lg bg-green-600 hover:bg-green-700 text-white"
             onClick={downloadPlan}
-            leftIcon={<Download className="h-5 w-5" />}
+            disabled={isDownloading}
           >
+            {isDownloading ? (
+              <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+            ) : (
+              <Download className="h-5 w-5 mr-2" />
+            )}
             Download Plan
           </Button>
         </div>

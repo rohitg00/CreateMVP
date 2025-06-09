@@ -4,15 +4,24 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DialogClose } from "@/components/ui/dialog";
 
 interface FileViewerProps {
   fileName: string;
   content: string;
   isOpen: boolean;
   onClose: () => void;
+  isOriginalContent?: boolean;
 }
 
-export default function FileViewer({ fileName, content, isOpen, onClose }: FileViewerProps) {
+export default function FileViewer({
+  fileName,
+  content,
+  isOpen,
+  onClose,
+  isOriginalContent = true
+}: FileViewerProps) {
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
 
@@ -52,69 +61,56 @@ export default function FileViewer({ fileName, content, isOpen, onClose }: FileV
   if (!isOpen) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.3 }}
-      className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-    >
-      <motion.div
-        initial={{ scale: 0.9, y: 20 }}
-        animate={{ scale: 1, y: 0 }}
-        exit={{ scale: 0.9, y: 20 }}
-        transition={{ type: "spring", duration: 0.5 }}
-        className="bg-slate-900 rounded-xl border border-indigo-500/30 w-full max-w-4xl max-h-[80vh] flex flex-col shadow-xl shadow-indigo-500/10"
-      >
-        <div className="flex items-center justify-between p-4 border-b border-indigo-500/20 bg-gradient-to-r from-slate-800 to-indigo-900/30">
-          <h3 className="text-lg font-semibold text-white flex items-center">
-            <span className="bg-gradient-to-r from-indigo-600/20 to-indigo-900/20 p-1.5 rounded mr-2 border border-indigo-500/20">
-              {fileName.endsWith("md") ? (
-                <FileIcon fileName={fileName} size={18} />
-              ) : (
-                <FileIcon fileName={fileName} size={18} />
-              )}
-            </span>
-            {fileName}
-          </h3>
-          <div className="flex items-center space-x-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="border-indigo-600/30 bg-indigo-950/50 text-indigo-300 hover:bg-indigo-800/50 shadow-sm"
-              onClick={handleCopy}
-            >
-              {copied ? (
-                "Copied!"
-              ) : (
-                <>
-                  <Copy className="h-4 w-4 mr-2 text-indigo-300" />
-                  Copy
-                </>
-              )}
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="border-indigo-600/30 bg-indigo-950/50 text-indigo-300 hover:bg-indigo-800/50 shadow-sm"
-              onClick={handleDownload}
-            >
-              <Download className="h-4 w-4 mr-2 text-indigo-300" />
-              Download
-            </Button>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-4xl h-[80vh] p-0 bg-slate-900 border-slate-700">
+        <DialogHeader className="p-4 border-b border-slate-800 flex flex-row items-center justify-between">
+          <div className="flex items-center gap-3">
+            <DialogTitle className="text-white flex items-center gap-2">
+              <FileText className="h-5 w-5 text-indigo-400" />
+              {fileName}
+            </DialogTitle>
+            
+            {isOriginalContent ? (
+              <span className="px-2 py-0.5 text-xs rounded-full bg-green-900/60 text-green-300 border border-green-700/50">
+                Original Quality
+              </span>
+            ) : (
+              <span className="px-2 py-0.5 text-xs rounded-full bg-amber-900/60 text-amber-300 border border-amber-700/50">
+                Regenerated
+              </span>
+            )}
+          </div>
+          
+          <div className="flex gap-2">
             <Button 
               variant="ghost" 
-              size="icon" 
-              className="text-white hover:text-white hover:bg-indigo-800/50"
-              onClick={onClose}
+              size="sm"
+              className="text-slate-300 hover:text-white hover:bg-slate-800"
+              onClick={() => {
+                navigator.clipboard.writeText(content);
+                toast({
+                  title: "Copied to clipboard",
+                  description: "The file content has been copied to your clipboard",
+                });
+              }}
             >
-              <X className="h-5 w-5" />
+              <Copy className="h-4 w-4 mr-2" />
+              Copy
             </Button>
+            <DialogClose asChild>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="text-slate-300 hover:text-white hover:bg-slate-800"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </DialogClose>
           </div>
-        </div>
+        </DialogHeader>
         
         <div className="flex-1 overflow-auto p-6 bg-gradient-to-b from-slate-900 to-slate-900/90">
-          <div className="prose prose-invert prose-md max-w-none">
+          <div className="prose prose-invert prose-md max-w-none prose-headings:text-indigo-300 prose-h1:text-2xl prose-h1:border-b prose-h1:border-indigo-500/20 prose-h1:pb-2 prose-h2:text-xl prose-h2:text-indigo-400 prose-h3:text-lg prose-h3:text-pink-300 prose-a:text-blue-400 prose-strong:text-yellow-300 prose-em:text-indigo-200 prose-code:text-green-300 prose-pre:bg-slate-800 prose-pre:border prose-pre:border-indigo-800/30 prose-pre:rounded-md prose-blockquote:border-l-indigo-500 prose-blockquote:bg-indigo-950/20 prose-blockquote:px-4 prose-blockquote:py-1 prose-blockquote:rounded-r-md prose-li:marker:text-indigo-400">
             <ReactMarkdown>{content}</ReactMarkdown>
           </div>
         </div>
@@ -128,8 +124,8 @@ export default function FileViewer({ fileName, content, isOpen, onClose }: FileV
             Download File
           </Button>
         </div>
-      </motion.div>
-    </motion.div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
