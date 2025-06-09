@@ -114,7 +114,7 @@ A simplified, self-hosted version of CreateMVP that generates comprehensive MVP 
    ```
 
 6. **Access the application**
-   Open your browser and navigate to `http://localhost:3000`
+   Open your browser and navigate to `http://localhost:5001`
 
 ## LLM Provider Setup
 
